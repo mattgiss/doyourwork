@@ -64,6 +64,12 @@ class MainActivity : FragmentActivity() {
         setContent { DoYourWorkTheme { AppRoot(vm, fold) } }
     }
 
+    // The day may have turned over while the app was away: bring the widgets up to date.
+    override fun onResume() {
+        super.onResume()
+        com.doyourwork.app.widget.WidgetWriter.write(vm)
+    }
+
     private fun askToNotifyOnce() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return

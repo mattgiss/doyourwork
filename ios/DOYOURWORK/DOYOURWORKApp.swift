@@ -5,6 +5,7 @@ struct DOYOURWORKApp: App {
     @StateObject private var store = AppStore()
     @StateObject private var feedback = Feedback()
     @ObservedObject private var themes = ThemeStore.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     init() { AppFont.register() }
 
@@ -26,7 +27,10 @@ struct DOYOURWORKApp: App {
                 .preferredColorScheme(.dark)
                 // The picker sits above the redraw, so it stays open while you try themes.
                 .sheet(isPresented: $themes.picking) { ThemePicker().font(.app(.body)) }
+                // The home and lock screen widgets read what the app last wrote (WidgetBridge).
+                .task { WidgetBridge.shared.start(store) }
         }
+        .onChange(of: scenePhase) { _, phase in if phase != .inactive { WidgetBridge.shared.write(store) } }
     }
 }
 

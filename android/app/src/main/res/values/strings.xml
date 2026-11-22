@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DOYOURWORK</string>
+    <string name="widget_today_desc">Minutes done today, your streak and the next chore.</string>
+    <string name="widget_scoreboard_desc">This week\'s points for the whole family.</string>
+    <string name="widget_dares_desc">Yesterday\'s dares, revealed after midnight.</string>
+    <string name="widget_today">Today\'s card</string>
+    <string name="widget_scoreboard">Scoreboard</string>
+    <string name="widget_dares">Dares</string>
 </resources>

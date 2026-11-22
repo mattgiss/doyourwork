@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Redraws hourly so a new day starts on time even when the app isn't opened (the app redraws it on every change). -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_today_desc"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="none"
+    android:updatePeriodMillis="3600000"
+    android:initialLayout="@layout/widget_loading"
+    android:widgetCategory="home_screen"
+    android:configure="com.doyourwork.app.widget.WidgetPlayerActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional" />
