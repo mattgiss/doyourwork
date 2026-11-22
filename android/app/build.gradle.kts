@@ -21,7 +21,7 @@ android {
         applicationId = "com.gyattchores.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 18
+        versionCode = 19
         versionName = "1.2"
     }
 
