@@ -26,12 +26,18 @@ targets:
         group: Shared
     dependencies:
       - package: DoYourWorkCore
+      - target: DOYOURWORKWidgets
+    # The App Group is where the app leaves the widgets' snapshot (WidgetBridge.swift).
+    entitlements:
+      path: DOYOURWORK/DOYOURWORK.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.gyattchores.app]
     settings:
       base:
         # Kept from the app's first name: changing it would make a new app, and installed phones
         # would stop getting updates.
         PRODUCT_BUNDLE_IDENTIFIER: com.gyattchores.app
-        MARKETING_VERSION: "1.1"
+        MARKETING_VERSION: "1.2"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"   # iPhone and iPad
@@ -49,6 +55,40 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+  # Home and lock screen widgets. They read the snapshot the app writes to the App Group.
+  DOYOURWORKWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: DOYOURWORKWidgets
+      # The app's typeface, shared with the app target.
+      - path: DOYOURWORK/Fonts
+        buildPhase: resources
+    dependencies:
+      - package: DoYourWorkCore
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    info:
+      path: DOYOURWORKWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: DOYOURWORK
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: DOYOURWORKWidgets/DOYOURWORKWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.gyattchores.app]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.gyattchores.app.widgets
+        MARKETING_VERSION: "1.2"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: YES
   DOYOURWORKUITests:
     type: bundle.ui-testing
     platform: iOS

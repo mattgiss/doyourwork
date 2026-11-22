@@ -21,8 +21,8 @@ android {
         applicationId = "com.gyattchores.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 17
-        versionName = "1.1"
+        versionCode = 18
+        versionName = "1.2"
     }
 
     // The Play Store upload key. Its password lives outside the repo, in
@@ -63,7 +63,7 @@ android {
             dimension = "dist"
             applicationId = "com.doyourwork.app" // permanent once uploaded to the Play Store
             // The store version, matching the iPhone app's; release.sh only changes the github one.
-            versionName = "1.1"
+            versionName = "1.2"
             signingConfig = upload ?: signingConfigs.getByName("debug")
         }
     }
@@ -126,6 +126,8 @@ dependencies {
     implementation("androidx.biometric:biometric:1.1.0")
     implementation("androidx.window:window:1.3.0")
     implementation("androidx.core:core-ktx:1.15.0")
+    // The home screen widgets (widget/).
+    implementation("androidx.glance:glance-appwidget:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     // Draws the "Add a phone" QR code and reads it with the camera. No Play services.
     implementation("com.google.zxing:core:3.5.3")

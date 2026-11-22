@@ -250,6 +250,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         // Unlinked, this phone's own family is the truth: the shared rows are made to match it.
         // This is how an install of the old on-device edition gets shared state (see FamilyState.reseed).
         if (relay == null) store.shareFamilyFromDevice(now())
+        // The home screen widgets read what the app last wrote (widget/WidgetWriter.kt).
+        com.doyourwork.app.widget.WidgetWriter.start(this)
     }
 
     /** The real relay (sync/Servers.kt) for every build, or a debug build's in-memory one. See build.gradle.kts. */
