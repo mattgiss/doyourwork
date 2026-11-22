@@ -1,0 +1,28 @@
+---
+description: How Cursor agents work in the DOYOURWORK repo
+alwaysApply: true
+---
+
+# DOYOURWORK: rules for Cursor agents
+
+DOYOURWORK is a chore scoreboard for families: iPhone/iPad (`ios/`, SwiftUI), Android (`android/`), shared engine and puzzles in `native/`, and the public site (`index.html`, `app.html`, `app-privacy.html`) served from `main` at doyourwork.today. Read `README.md`, `CONTRIBUTING.md` and `launch/README.md` before changing anything.
+
+## Merging to main is production
+- A merge to `main` deploys the website straight to production and posts to Discord. So: never commit or push to `main`.
+- Branch from the latest `main` as `cursor/<short-topic>`, open a pull request using the template (What / Why / How, Verification table, checklist), and stop there. Never merge, never enable auto-merge, never mark a draft ready.
+- Never push tags. An `ios-v*` tag uploads a build to TestFlight.
+- Never run the `customer-notify` workflow or anything else that messages users.
+
+## Scope
+- One concern per PR. iOS and Android ship the same features; if you change one, change the other in the same PR or say in the PR what the other side still needs.
+- Don't bump version numbers or build numbers. Matthew decides releases.
+- Store listing text lives in `ios/AppStore/` and `android/PlayStore/`. Edit it only when a task asks for it, and never upload or submit anything to a store.
+
+## Checking your work
+- Let CI run on the PR (`ci.yml`, plus `android.yml` / `ios.yml` for app changes) and fix failures your change caused. Read the failing log before concluding anything.
+- No phones in the cloud. Say in the PR when something needs a check on a real device.
+
+## Never
+- Type, print or commit passwords, keys, tokens or signing files.
+- Change CI workflows just to make a check pass.
+- Put personal details in requests to outside services.
