@@ -127,6 +127,8 @@ fun PlayerScreen(
     onBack: (() -> Unit)?,
     /** Opens the puzzle; offered once today's card is submitted. */
     onPuzzle: () -> Unit = {},
+    /** Opens snake, the second game; offered alongside the puzzle. */
+    onSnake: () -> Unit = {},
 ) {
     val now = remember(logs, cards) { vm.now() }
     val card = vm.cardFor(player.id, cards, logs)
@@ -177,7 +179,7 @@ fun PlayerScreen(
             else -> {
                 TopBar(player.shownName, onBack, { naming = true }, character, { fb.tap(); choosing = true }, stats)
                 CardRun(vm, player, card, logs, todays, others, hinge, bonusLeft = vm.store.pool.count { it.id !in taken },
-                    onPuzzle = onPuzzle) { bonusPicking = true }
+                    onPuzzle = onPuzzle, onSnake = onSnake) { bonusPicking = true }
             }
         }
     }
@@ -280,6 +282,7 @@ private fun CardRun(
     hinge: Hinge?,
     bonusLeft: Int,
     onPuzzle: () -> Unit,
+    onSnake: () -> Unit,
     onBonus: () -> Unit,
 ) {
     val fb = LocalFeedback.current
@@ -375,6 +378,8 @@ private fun CardRun(
                             shortLabel = "Play level $level · $minutesLeft min left") {
                             fb.unlock(); onPuzzle()
                         }
+                        // The second game, sharing the same hour.
+                        QuietButton("Play snake") { fb.unlock(); onSnake() }
                     } else {
                         Text("That's your hour of puzzles for today. See you tomorrow!", color = Done,
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp))

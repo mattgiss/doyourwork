@@ -717,6 +717,41 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(playButton(level: 2, minutes: 60, in: app).waitForExistence(timeout: wait))
     }
 
+    /// Submitting today's card unlocks snake too. A swipe starts it; running into the wall ends the
+    /// game, and "Play again" starts a fresh one.
+    func testSubmittingUnlocksSnake() {
+        let app = launch(["-resetData", "-demoFamily"])
+        open("riley", in: app)
+        app.buttons["Suggest a 25-minute card"].tap()
+        mainButton(in: app).tap()
+
+        let snake = app.buttons["play-snake"]
+        XCTAssertTrue(app.staticTexts["The puzzle opens once you send your card."].waitForExistence(timeout: wait))
+        XCTAssertFalse(snake.exists, "locked until the card is in")
+        checkOffEverything(in: app).tap()
+        XCTAssertTrue(snake.waitForExistence(timeout: wait), "a submitted card unlocks snake")
+        snake.tap()
+
+        let board = app.descendants(matching: .any)["snake-board"]
+        let score = app.staticTexts["snake-score"]
+        XCTAssertTrue(board.waitForExistence(timeout: wait))
+        XCTAssertEqual(score.label, "Score 0")
+        screenshot("snake-1-ready", of: app)
+
+        // The line starts in the middle of a 15 by 15 board; swiped up, it hits the top wall in eight steps.
+        board.swipeUp()
+        let over = app.staticTexts["snake-over"]
+        XCTAssertTrue(over.waitForExistence(timeout: wait), "running into the wall ends the game")
+        XCTAssertEqual(over.label, "Game over")
+        screenshot("snake-2-game-over", of: app)
+
+        app.buttons["Play again"].tap()
+        XCTAssertTrue(over.waitForNonExistence(timeout: wait))
+        XCTAssertEqual(score.label, "Score 0")
+        app.buttons["snake-back"].tap()
+        XCTAssertTrue(snake.waitForExistence(timeout: wait))
+    }
+
     /// The puzzle gets an hour a day per player. The play button counts down; when the hour runs
     /// out mid-level the board is covered and only "back" works, and the day screen says so.
     func testThePuzzleStopsAfterAnHourADay() {

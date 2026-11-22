@@ -78,8 +78,10 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
     var daresOpen by rememberSaveable { mutableStateOf(false) }
     // The puzzle takes the whole window, even beside the list on a foldable, so its flash fills the screen.
     var puzzleId by rememberSaveable { mutableStateOf<String?>(null) }
+    var snakeId by rememberSaveable { mutableStateOf<String?>(null) }
     val selected = players.firstOrNull { it.id == selectedId }
     val puzzlePlayer = players.firstOrNull { it.id == puzzleId }
+    val snakePlayer = players.firstOrNull { it.id == snakeId }
 
     // Tabletop: half-open with a horizontal hinge. Content above it, controls below.
     val hinge = if (fold != null && fold.state == FoldingFeature.State.HALF_OPENED && fold.orientation == FoldingFeature.Orientation.HORIZONTAL)
@@ -89,8 +91,9 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
 
     val myId = me
     val showDares = daresOpen && myId != null && linked
-    BackHandler(enabled = puzzlePlayer != null || adminOpen || showDares || selected != null) {
+    BackHandler(enabled = puzzlePlayer != null || snakePlayer != null || adminOpen || showDares || selected != null) {
         if (puzzlePlayer != null) puzzleId = null
+        else if (snakePlayer != null) snakeId = null
         else if (adminOpen) adminOpen = false else if (showDares) daresOpen = false else selectedId = null
     }
 
@@ -116,6 +119,8 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
             }
             if (puzzlePlayer != null) {
                 Box(Modifier.statusBarsPadding()) { PuzzleScreen(vm, puzzlePlayer, onBack = { puzzleId = null }) }
+            } else if (snakePlayer != null) {
+                Box(Modifier.statusBarsPadding()) { SnakeScreen(vm, snakePlayer, onBack = { snakeId = null }) }
             } else if (twoPane) {
                 val hingeLeft = hingeX?.let { with(LocalDensity.current) { it.toDp() } }
                 Row(Modifier.fillMaxSize()) {
@@ -126,7 +131,8 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                             when {
                                 adminOpen -> AdminScreen(vm, logs, onBack = { adminOpen = false })
                                 showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
-                                selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null, onPuzzle = { puzzleId = selected.id })
+                                selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null, onPuzzle = { puzzleId = selected.id },
+                                    onSnake = { snakeId = selected.id })
                                 else -> Text(if (players.isEmpty()) "> add players in the admin area" else "> pick a player", color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.align(Alignment.Center).statusBarsPadding())
                             }
@@ -138,7 +144,7 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                     adminOpen -> AdminScreen(vm, logs, onBack = { adminOpen = false })
                     showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
                     selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = { selectedId = null },
-                        onPuzzle = { puzzleId = selected.id })
+                        onPuzzle = { puzzleId = selected.id }, onSnake = { snakeId = selected.id })
                     else -> home()
                 }
             }
