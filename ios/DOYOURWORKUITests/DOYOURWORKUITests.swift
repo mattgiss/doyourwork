@@ -181,7 +181,13 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: wait), "\(name) should be on the home screen")
         row.tap()
         if isPad {
-            // The day opens beside the list; there's nothing to go back to.
+            // The day opens beside the list; there's nothing to go back to. On a slow simulator the
+            // highlight can trail the tap, and a tap that lands while the list is settling can be
+            // lost, so wait for it and tap again rather than reading it once.
+            let selected = NSPredicate(format: "isSelected == true")
+            for _ in 0..<3 where XCTWaiter().wait(for: [expectation(for: selected, evaluatedWith: row)], timeout: wait / 3) != .completed {
+                if row.exists, row.isHittable { row.tap() }
+            }
             XCTAssertTrue(row.isSelected, "\(name) should be highlighted in the list")
         } else {
             // A tap that lands while the list is still settling can be lost: tap again.
