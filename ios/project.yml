@@ -42,6 +42,7 @@ targets:
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"   # iPhone and iPad
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: R2Z257C2EH
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: DOYOURWORK
         INFOPLIST_KEY_NSFaceIDUsageDescription: Open the admin area to approve chores.
@@ -88,6 +89,7 @@ targets:
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: R2Z257C2EH
         SKIP_INSTALL: YES
   DOYOURWORKUITests:
     type: bundle.ui-testing
@@ -103,6 +105,7 @@ targets:
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"   # iPhone and iPad
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: R2Z257C2EH
         GENERATE_INFOPLIST_FILE: YES
 
 # A shared scheme, so `xcodebuild` (CI) and Xcode use the same build and test setup.

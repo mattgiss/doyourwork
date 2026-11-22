@@ -339,12 +339,15 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					1D23C6AA89E917A5FFD29894 = {
+						DevelopmentTeam = R2Z257C2EH;
 						ProvisioningStyle = Automatic;
 					};
 					2063C5267E4694C3A407B50B = {
+						DevelopmentTeam = R2Z257C2EH;
 						ProvisioningStyle = Automatic;
 					};
 					BA23D1D75F88F7ACCB003180 = {
+						DevelopmentTeam = R2Z257C2EH;
 						ProvisioningStyle = Automatic;
 						TestTargetID = 1D23C6AA89E917A5FFD29894;
 					};
@@ -471,6 +474,7 @@
 				CODE_SIGN_ENTITLEMENTS = DOYOURWORKWidgets/DOYOURWORKWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R2Z257C2EH;
 				INFOPLIST_FILE = DOYOURWORKWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -558,6 +562,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R2Z257C2EH;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
@@ -588,6 +593,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R2Z257C2EH;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
@@ -614,6 +620,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R2Z257C2EH;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -633,6 +640,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = R2Z257C2EH;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -709,6 +717,7 @@
 				CODE_SIGN_ENTITLEMENTS = DOYOURWORKWidgets/DOYOURWORKWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R2Z257C2EH;
 				INFOPLIST_FILE = DOYOURWORKWidgets/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
