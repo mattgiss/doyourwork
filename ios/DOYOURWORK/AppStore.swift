@@ -222,7 +222,7 @@ final class AppStore: ObservableObject {
         }
         let defaults = UserDefaults.standard
         // Puzzle levels too: player ids start again from 1, so a new player would inherit an old one's level.
-        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("seen_level_") || key.hasPrefix(Self.puzzleKey) || key.hasPrefix(Self.puzzleTimeKey) {
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("seen_level_") || key.hasPrefix(Self.puzzleKey) || key.hasPrefix(Self.puzzleTimeKey) || key.hasPrefix(Self.snakeKey) {
             defaults.removeObject(forKey: key)
         }
         cards = [:]; logs = []; members = []; pool = starterChores
@@ -430,6 +430,7 @@ final class AppStore: ObservableObject {
         UserDefaults.standard.removeObject(forKey: "seen_level_\(member.id)")
         UserDefaults.standard.removeObject(forKey: Self.puzzleKey + member.id)
         UserDefaults.standard.removeObject(forKey: Self.puzzleTimeKey + member.id)
+        UserDefaults.standard.removeObject(forKey: Self.snakeKey + member.id)
         familyChanged()
     }
 
@@ -539,6 +540,21 @@ final class AppStore: ObservableObject {
     }
 
     func puzzleTimeShown() { objectWillChange.send() }
+
+    // MARK: Snake
+
+    /// Each player's best snake score. Kept on this phone; never synced.
+    private static let snakeKey = uiTesting ? "ui-testing.snake_best_" : "snake_best_"
+
+    func snakeBest(_ playerId: String) -> Int { UserDefaults.standard.integer(forKey: Self.snakeKey + playerId) }
+
+    /// Records a finished game. Returns true when it beats the player's best.
+    @discardableResult
+    func snakeFinished(_ playerId: String, score: Int) -> Bool {
+        guard score > snakeBest(playerId) else { return false }
+        UserDefaults.standard.set(score, forKey: Self.snakeKey + playerId)
+        return true
+    }
 
     /// True the first time a player's screen shows a level higher than the last one it showed.
     func isNewLevel(_ playerId: String, _ level: Int) -> Bool {

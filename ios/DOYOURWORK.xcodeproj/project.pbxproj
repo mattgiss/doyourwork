@@ -23,6 +23,7 @@
 		506762AA616744E17FB81B9D /* RelayLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3DE5415F0B60A98B70991E /* RelayLink.swift */; };
 		6194C01F5855631173CE0556 /* PuzzleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4911531450715E4EEFA432 /* PuzzleView.swift */; };
 		61F755552C81222085070A90 /* Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61B7319E396FEC1B9D9ED4E /* Timeline.swift */; };
+		629DBEC7B3EED97B029BAFAF /* SnakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F5F6ED2C77756544C085FC /* SnakeView.swift */; };
 		6B4A4E5A3E0A4F81ED025D0C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26C3AC6CCAAF2BF2C21DE1C8 /* RootView.swift */; };
 		708C3F3DBF9864A4E3F1C8AA /* SchibstedGrotesk-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1067664B19CF7592EBDBCE00 /* SchibstedGrotesk-Bold.ttf */; };
 		742AC0397E9D5ED58B2DCC89 /* SchibstedGrotesk-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 576D2D51606DF6E4AD9A179D /* SchibstedGrotesk-Regular.ttf */; };
@@ -82,6 +83,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		02F5F6ED2C77756544C085FC /* SnakeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnakeView.swift; sourceTree = "<group>"; };
 		1067664B19CF7592EBDBCE00 /* SchibstedGrotesk-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Bold.ttf"; sourceTree = "<group>"; };
 		19B83183CAACAA7CC6378583 /* FamilySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySync.swift; sourceTree = "<group>"; };
 		1C242792965CB5AA1C037E6A /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
@@ -258,6 +260,7 @@
 				EF4911531450715E4EEFA432 /* PuzzleView.swift */,
 				26C3AC6CCAAF2BF2C21DE1C8 /* RootView.swift */,
 				1F30322FB74ED786B905F610 /* SetupView.swift */,
+				02F5F6ED2C77756544C085FC /* SnakeView.swift */,
 				BD036D80EA3B407899A56911 /* Typography.swift */,
 				2366A5448282A130BC28641B /* WidgetBridge.swift */,
 				09F41292B85792A75F007B56 /* Family */,
@@ -438,6 +441,7 @@
 				506762AA616744E17FB81B9D /* RelayLink.swift in Sources */,
 				6B4A4E5A3E0A4F81ED025D0C /* RootView.swift in Sources */,
 				F6F599531D896780DF92BCF2 /* SetupView.swift in Sources */,
+				629DBEC7B3EED97B029BAFAF /* SnakeView.swift in Sources */,
 				2612B2AD3C02ED34C7366BAB /* Typography.swift in Sources */,
 				A72809AE53EFFED0E015AC38 /* WidgetBridge.swift in Sources */,
 			);

@@ -420,6 +420,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         e.putLong(key, puzzleTime.getLong(key, 0L) + ms).apply()
     }
 
+    // ─── Snake ──────────────────────────────────────────────────────────────
+
+    /** Each player's best snake score. Kept on this phone; never synced. */
+    private val snakeScores = app.getSharedPreferences("snake", android.content.Context.MODE_PRIVATE)
+
+    fun snakeBest(playerId: String): Int = snakeScores.getInt(playerId, 0)
+
+    /** Records a finished game. Returns true when it beats the player's best. */
+    fun snakeFinished(playerId: String, score: Int): Boolean {
+        if (score <= snakeBest(playerId)) return false
+        snakeScores.edit().putInt(playerId, score).apply()
+        return true
+    }
+
     /** True the first time yesterday's dare results are shown on this phone. */
     fun firstReveal(day: String): Boolean {
         if (seen.getString("reveal", null) == day) return false
@@ -481,6 +495,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         seen.edit().clear().apply()
         puzzleProgress.edit().clear().apply()
         puzzleTime.edit().clear().apply()
+        snakeScores.edit().clear().apply()
         prefs.edit().clear().apply()
         biometricUnlock.value = false
         syncedOnce.value = false
@@ -546,6 +561,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         seen.edit().remove(m.id).apply()
         puzzleProgress.edit().remove(m.id).apply()
         puzzleTime.edit().apply { puzzleTime.all.keys.filter { it.startsWith("${m.id}|") }.forEach { remove(it) } }.apply()
+        snakeScores.edit().remove(m.id).apply()
         requestSync()
     }
 
