@@ -9,7 +9,10 @@ name: Android
 # Every APK must carry the encrypted relay's address and none the old plain tables' one.
 
 on:
+  pull_request:
+    branches: [main]
   push:
+    branches: [main]
     paths:
       - 'android/**'
       - '.github/workflows/android.yml'
@@ -20,8 +23,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Every PR to main runs this workflow, so its checks always report and main can require them.
+  # This works out whether the PR touches the Android app; the jobs below skip themselves when it doesn't,
+  # and a skipped job counts as passed. Pushes to main and manual runs always run everything.
+  changes:
+    name: What changed (android)
+    runs-on: ubuntu-latest
+    outputs:
+      android: ${{ steps.diff.outputs.android }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then echo "android=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          changed=$(git diff --name-only "$BASE...$HEAD")
+          echo "Changed in this PR:"; echo "$changed" | sed 's/^/  /'
+          if echo "$changed" | grep -qE '^(android/|\.github/workflows/android\.yml$)'; then echo "android=true"; else echo "android=false"; fi >> "$GITHUB_OUTPUT"
+
   build:
     name: Tests and release APKs
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:

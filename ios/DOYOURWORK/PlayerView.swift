@@ -183,6 +183,7 @@ private struct CardRunView: View {
     let bonusLeft: Int
     let onBonus: () -> Void
     @State private var puzzleOpen = false
+    @State private var snakeOpen = false
 
     var body: some View {
         let rank = store.rank(player.id)
@@ -271,6 +272,9 @@ private struct CardRunView: View {
                             TermButton(label: "Play level \(level) · \(Phrase.count(minutesLeft, "minute")) left today", action: play)
                             TermButton(label: "Play level \(level) · \(minutesLeft) min left", action: play)
                         }
+                        // The second game, sharing the same hour.
+                        OutlineButton(label: "Play snake") { fb.unlock(); snakeOpen = true }
+                            .accessibilityIdentifier("play-snake")
                     } else {
                         Text("That's your hour of puzzles for today. See you tomorrow!").foregroundStyle(Color.done).padding(.horizontal, 20).padding(.vertical, 18)
                     }
@@ -283,6 +287,9 @@ private struct CardRunView: View {
         .task(id: rank.level) { if store.isNewLevel(player.id, rank.level) { fb.levelUp() } }
         .fullScreenCover(isPresented: $puzzleOpen, onDismiss: { store.puzzleTimeShown() }) {
             PuzzleView(player: player).environmentObject(store).environmentObject(fb).font(.app(.body)).tint(Theme.accent)
+        }
+        .fullScreenCover(isPresented: $snakeOpen, onDismiss: { store.puzzleTimeShown() }) {
+            SnakeView(player: player).environmentObject(store).environmentObject(fb).font(.app(.body)).tint(Theme.accent)
         }
     }
 }

@@ -37,6 +37,23 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
+        <!-- Home screen widgets (widget/). They read what the app last wrote. -->
+        <receiver android:name=".widget.TodayWidgetReceiver" android:exported="true" android:label="@string/widget_today">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_today" />
+        </receiver>
+        <receiver android:name=".widget.ScoreboardWidgetReceiver" android:exported="true" android:label="@string/widget_scoreboard">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_scoreboard" />
+        </receiver>
+        <receiver android:name=".widget.DaresWidgetReceiver" android:exported="true" android:label="@string/widget_dares">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_dares" />
+        </receiver>
+        <!-- Picks whose card a Today or Dares widget shows. -->
+        <activity android:name=".widget.WidgetPlayerActivity" android:exported="true" android:theme="@style/Theme.DOYOURWORK">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" /></intent-filter>
+        </activity>
         <!-- The scanner turns with the phone instead of forcing landscape. -->
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"

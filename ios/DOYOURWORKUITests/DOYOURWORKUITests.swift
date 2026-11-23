@@ -183,21 +183,33 @@ final class DOYOURWORKUITests: XCTestCase {
         return submit
     }
 
+    /// Opens a player's day. With two panes (an iPad app given a wide window) it opens beside the
+    /// list, with that player highlighted; with one (a phone, or an iPad app in a narrow Stage
+    /// Manager window) it replaces the list and there's a way back. Which one is up to the window,
+    /// not the device, so accept either.
     private func open(_ name: String, in app: XCUIApplication) {
         let row = playerRow(name, in: app)
         XCTAssertTrue(row.waitForExistence(timeout: wait), "\(name) should be on the home screen")
+        let back = app.buttons["Back"]
+        func opened() -> Bool { back.exists || (row.exists && row.isSelected) }
         row.tap()
-        if isPad {
-            // The day opens beside the list; there's nothing to go back to.
-            XCTAssertTrue(row.isSelected, "\(name) should be highlighted in the list")
-        } else {
-            // A tap that lands while the list is still settling can be lost: tap again.
-            let back = app.buttons["Back"]
-            for _ in 0..<3 where !back.waitForExistence(timeout: wait / 3) {
-                if row.exists, row.isHittable { row.tap() }
-            }
-            XCTAssertTrue(back.waitForExistence(timeout: wait), "\(name)'s screen should open")
+        // On a slow simulator the highlight or the next screen can trail the tap, and a tap that
+        // lands while the list is still settling can be lost: wait, and tap again.
+        // An expectation can only be waited on once, so each try gets a fresh one.
+        func waitUntilOpened() -> Bool {
+            let done = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in opened() }, object: nil)
+            return XCTWaiter().wait(for: [done], timeout: wait / 3) == .completed
         }
+        for _ in 0..<3 where !waitUntilOpened() {
+            if row.exists, row.isHittable { row.tap() }
+        }
+        XCTAssertTrue(opened(), "\(name)'s day should open")
+    }
+
+    /// Whether the app is showing the list and a day side by side: with nobody picked yet, the
+    /// right-hand side asks you to pick a player.
+    private func showsTwoPanes(_ app: XCUIApplication) -> Bool {
+        app.staticTexts["> pick a player"].waitForExistence(timeout: 3)
     }
 
     /// Taps an alert's button once the alert has stopped moving, by its position. On CI's
@@ -724,6 +736,41 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(playButton(level: 2, minutes: 60, in: app).waitForExistence(timeout: wait))
     }
 
+    /// Submitting today's card unlocks snake too. A swipe starts it; running into the wall ends the
+    /// game, and "Play again" starts a fresh one.
+    func testSubmittingUnlocksSnake() {
+        let app = launch(["-resetData", "-demoFamily"])
+        open("riley", in: app)
+        app.buttons["Suggest a 25-minute card"].tap()
+        mainButton(in: app).tap()
+
+        let snake = app.buttons["play-snake"]
+        XCTAssertTrue(app.staticTexts["The puzzle opens once you send your card."].waitForExistence(timeout: wait))
+        XCTAssertFalse(snake.exists, "locked until the card is in")
+        checkOffEverything(in: app).tap()
+        XCTAssertTrue(snake.waitForExistence(timeout: wait), "a submitted card unlocks snake")
+        snake.tap()
+
+        let board = app.descendants(matching: .any)["snake-board"]
+        let score = app.staticTexts["snake-score"]
+        XCTAssertTrue(board.waitForExistence(timeout: wait))
+        XCTAssertEqual(score.label, "Score 0")
+        screenshot("snake-1-ready", of: app)
+
+        // The line starts in the middle of a 15 by 15 board; swiped up, it hits the top wall in eight steps.
+        board.swipeUp()
+        let over = app.staticTexts["snake-over"]
+        XCTAssertTrue(over.waitForExistence(timeout: wait), "running into the wall ends the game")
+        XCTAssertEqual(over.label, "Game over")
+        screenshot("snake-2-game-over", of: app)
+
+        app.buttons["Play again"].tap()
+        XCTAssertTrue(over.waitForNonExistence(timeout: wait))
+        XCTAssertEqual(score.label, "Score 0")
+        app.buttons["snake-back"].tap()
+        XCTAssertTrue(snake.waitForExistence(timeout: wait))
+    }
+
     /// The puzzle gets an hour a day per player. The play button counts down; when the hour runs
     /// out mid-level the board is covered and only "back" works, and the day screen says so.
     func testThePuzzleStopsAfterAnHourADay() {
@@ -881,7 +928,7 @@ final class DOYOURWORKUITests: XCTestCase {
         // 1. The scoreboard: this week's board, who's playing, and the 30-day log.
         let app = launch(["-resetData", "-demoData", "-screenshots"])
         XCTAssertTrue(playerRow("sockninja", in: app).waitForExistence(timeout: wait))
-        if isPad {
+        if showsTwoPanes(app) {
             // Half an iPad's screen would be empty with nobody picked: show a day waiting on an admin.
             open("dishwizard", in: app)
             XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
@@ -924,6 +971,7 @@ final class DOYOURWORKUITests: XCTestCase {
     func testIPadShowsTheListAndTheDaySideBySide() throws {
         try XCTSkipUnless(isPad, "two panes are the iPad layout")
         let app = launch(["-resetData", "-demoData"])
+        try XCTSkipUnless(showsTwoPanes(app), "the app's window is too narrow for two panes; give it the whole screen")
 
         // Nothing picked yet: the list on the left, a prompt on the right.
         XCTAssertTrue(app.staticTexts["> pick a player"].waitForExistence(timeout: wait))

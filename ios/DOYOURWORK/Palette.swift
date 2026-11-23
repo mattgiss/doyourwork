@@ -102,6 +102,13 @@ extension Color {
 
     var luminance: Double { let c = UIColor(self).rgb; return 0.2126 * c.0 + 0.7152 * c.1 + 0.0722 * c.2 }
 
+    /// The colour as 0xRRGGBB, for the widgets' snapshot (`WidgetBridge`).
+    var hexValue: UInt32 {
+        let c = UIColor(self).rgb
+        func byte(_ v: Double) -> UInt32 { UInt32(max(0, min(255, (v * 255).rounded()))) }
+        return byte(c.0) << 16 | byte(c.1) << 8 | byte(c.2)
+    }
+
     /// The theme's background, behind everything.
     static var appBackground: Color { ThemeStore.shared.current.bg }
     /// Ordinary text on the background.
