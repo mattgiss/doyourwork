@@ -21,6 +21,7 @@
 		42532696AC9039DE147B3F26 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC0E4B1B46E60BD493721DE3 /* SwiftUI.framework */; };
 		4DBEEDE35BA1DB409D7FBF92 /* SchibstedGrotesk-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3CC7C494A85F020D377B273C /* SchibstedGrotesk-Black.ttf */; };
 		506762AA616744E17FB81B9D /* RelayLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3DE5415F0B60A98B70991E /* RelayLink.swift */; };
+		5699EC820FC7CFC16A6366A1 /* TodayOverview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E0C2E2B21F077C753458BF /* TodayOverview.swift */; };
 		6194C01F5855631173CE0556 /* PuzzleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4911531450715E4EEFA432 /* PuzzleView.swift */; };
 		61F755552C81222085070A90 /* Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61B7319E396FEC1B9D9ED4E /* Timeline.swift */; };
 		629DBEC7B3EED97B029BAFAF /* SnakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F5F6ED2C77756544C085FC /* SnakeView.swift */; };
@@ -89,6 +90,7 @@
 		1C242792965CB5AA1C037E6A /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		1E592160EA9ABDFEE691B835 /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		1F30322FB74ED786B905F610 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		22E0C2E2B21F077C753458BF /* TodayOverview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayOverview.swift; sourceTree = "<group>"; };
 		2366A5448282A130BC28641B /* WidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBridge.swift; sourceTree = "<group>"; };
 		26C3AC6CCAAF2BF2C21DE1C8 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		3CC7C494A85F020D377B273C /* SchibstedGrotesk-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Black.ttf"; sourceTree = "<group>"; };
@@ -261,6 +263,7 @@
 				26C3AC6CCAAF2BF2C21DE1C8 /* RootView.swift */,
 				1F30322FB74ED786B905F610 /* SetupView.swift */,
 				02F5F6ED2C77756544C085FC /* SnakeView.swift */,
+				22E0C2E2B21F077C753458BF /* TodayOverview.swift */,
 				BD036D80EA3B407899A56911 /* Typography.swift */,
 				2366A5448282A130BC28641B /* WidgetBridge.swift */,
 				09F41292B85792A75F007B56 /* Family */,
@@ -442,6 +445,7 @@
 				6B4A4E5A3E0A4F81ED025D0C /* RootView.swift in Sources */,
 				F6F599531D896780DF92BCF2 /* SetupView.swift in Sources */,
 				629DBEC7B3EED97B029BAFAF /* SnakeView.swift in Sources */,
+				5699EC820FC7CFC16A6366A1 /* TodayOverview.swift in Sources */,
 				2612B2AD3C02ED34C7366BAB /* Typography.swift in Sources */,
 				A72809AE53EFFED0E015AC38 /* WidgetBridge.swift in Sources */,
 			);

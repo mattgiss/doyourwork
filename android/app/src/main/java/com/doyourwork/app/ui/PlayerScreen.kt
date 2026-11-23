@@ -83,7 +83,7 @@ fun TwoZone(hinge: Hinge?, top: @Composable () -> Unit, bottom: @Composable () -
 private fun TopBar(title: String, onBack: (() -> Unit)?, onName: (() -> Unit)? = null, character: PlayerCharacter? = null,
                    onCharacter: (() -> Unit)? = null, stats: (@Composable () -> Unit)? = null) {
     val ink = Palette.HEAT.ink
-    Column(Modifier.fillMaxWidth().background(Palette.HEAT.stops[0]).statusBarsPadding().padding(start = 4.dp, end = 4.dp, bottom = 12.dp)) {
+    Column(Modifier.fillMaxWidth().background(Palette.HEAT.stops[0]).statusBarsPadding().padding(start = 4.dp + LocalColumnInset.current, end = 4.dp + LocalColumnInset.current, bottom = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) TextButton(onClick = onBack) { Text("Back", color = ink, fontWeight = FontWeight.Bold) }
             // Their character; tapping it is how they change it.
@@ -215,11 +215,11 @@ private fun Picker(
                     Text(
                         if (bonus) "Did a bit extra today? Pick what you did. Every chore still earns its points."
                         else "Pick what you'd like to do today, then fill it up to ${Engine.DAILY_MINUTES} minutes.",
-                        color = Done, modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                        color = Done, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current, vertical = 14.dp),
                     )
                 }
                 items(notes) { note ->
-                    Text(note, color = Warn, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 10.dp))
+                    Text(note, color = Warn, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current).padding(bottom = 10.dp))
                 }
                 itemsIndexed(pool, key = { _, c -> c.id }) { i, c ->
                     val isPicked = c.id in picked
@@ -242,7 +242,7 @@ private fun Picker(
         bottom = {
             Column(Modifier.fillMaxWidth()) {
                 Text(if (bonus) Phrase.count(total, "minute") else "$total of ${Engine.DAILY_MINUTES} minutes", fontWeight = FontWeight.Black,
-                    style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
+                    style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current, vertical = 10.dp))
                 if (!bonus) {
                     MinutesBar(total, Engine.DAILY_MINUTES)
                     QuietButton(
@@ -341,8 +341,8 @@ private fun CardRun(
             Column(Modifier.fillMaxWidth()) {
                 if (!card.submitted) {
                     if (lost.isNotEmpty()) Text("Someone else got to the ones marked taken first, so they won't be sent.",
-                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp))
-                    Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current).padding(bottom = 8.dp))
+                    Row(Modifier.padding(horizontal = 20.dp + LocalColumnInset.current), verticalAlignment = Alignment.CenterVertically) {
                         Text("The puzzle opens once you send your card.", style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.weight(1f))
                         Text("Change my picks", color = Ink, fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable { fb.tap(); vm.clearCard(player) }.padding(vertical = 14.dp, horizontal = 4.dp))
@@ -367,9 +367,9 @@ private fun CardRun(
                         rejected == verdicts.size -> "None of today's chores were approved." to Bad
                         else -> "${verdicts.size - rejected} approved and $rejected turned down." to Done
                     }
-                    Text(line, color = lineColor, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp))
+                    Text(line, color = lineColor, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current, vertical = 10.dp))
                     if (rejected > 0) Text("You can redo the turned-down ones in a bonus round.",
-                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 10.dp))
+                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current).padding(bottom = 10.dp))
                     val minutesLeft = com.doyourwork.app.engine.PuzzleTime.minutesLeft(vm.puzzleUsedMs(player.id))
                     if (minutesLeft > 0) {
                         val level = vm.puzzleLevel(player.id)
@@ -382,7 +382,7 @@ private fun CardRun(
                         QuietButton("Play snake") { fb.unlock(); onSnake() }
                     } else {
                         Text("That's your hour of puzzles for today. See you tomorrow!", color = Done,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp))
+                            modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current, vertical = 18.dp))
                     }
                     if (bonusLeft > 0) QuietButton("Do a bonus round") { fb.tap(); onBonus() }
                 }

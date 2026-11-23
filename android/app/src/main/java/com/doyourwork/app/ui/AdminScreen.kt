@@ -99,7 +99,7 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
     // The admin area is in Clear's ocean theme, so it's plain at a glance which mode you're in.
     CompositionLocalProvider(LocalPalette provides Palette.OCEAN) {
     Column(Modifier.fillMaxSize().background(Bg)) {
-        Row(Modifier.fillMaxWidth().background(Palette.OCEAN.stops[0]).statusBarsPadding().padding(start = 4.dp, end = 12.dp, bottom = 8.dp),
+        Row(Modifier.fillMaxWidth().background(Palette.OCEAN.stops[0]).statusBarsPadding().padding(start = 4.dp + LocalColumnInset.current, end = 12.dp + LocalColumnInset.current, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) TextButton(onClick = onBack) { Text("Back", color = Palette.OCEAN.ink, fontWeight = FontWeight.Bold) }
             Text("Admin", color = Palette.OCEAN.ink, fontSize = 24.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 12.dp))
@@ -121,8 +121,8 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { verify() }), modifier = Modifier.fillMaxWidth().focusRequester(focus),
                 )
-                TermButton("Unlock", enabled = code.isNotEmpty(), modifier = Modifier.bleed(20.dp)) { verify() }
-                if (canBio) QuietButton("Use my fingerprint or face", Modifier.bleed(20.dp)) { promptBiometric(activity) { authed = true } }
+                TermButton("Unlock", enabled = code.isNotEmpty(), modifier = Modifier.bleed(20.dp + LocalColumnInset.current)) { verify() }
+                if (canBio) QuietButton("Use my fingerprint or face", Modifier.bleed(20.dp + LocalColumnInset.current)) { promptBiometric(activity) { authed = true } }
                 Text(if (linked) "Forgot your code? Another admin can set a new one for you."
                     else "Forgot your code? It's only kept on this phone, so it can't be looked up. Clearing the app's data starts a new scoreboard.",
                     style = MaterialTheme.typography.bodyMedium, color = Done)
@@ -156,7 +156,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
     val (saveBackup, restoreBackup) = rememberBackup(vm)
 
     if (addingChores) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp + LocalColumnInset.current)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Add chores", color = Accent, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                 TextButton(onClick = { addingChores = false }) { Text("Cancel") }
@@ -166,7 +166,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
         return
     }
 
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp + LocalColumnInset.current)) {
         item {
             Row(Modifier.padding(vertical = 12.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (f in listOf(Status.PENDING, Status.APPROVED, Status.REJECTED, "all")) {
@@ -180,7 +180,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
             val byPlayer = shown.groupBy { it.playerId }.filterValues { it.size > 1 }
             items(byPlayer.keys.toList(), key = { "all$it" }) { id ->
                 val mine = byPlayer.getValue(id)
-                TermButton("Approve all ${mine.size} of ${names[id] ?: mine.first().playerName}'s chores", modifier = Modifier.bleed(20.dp).padding(top = 6.dp)) {
+                TermButton("Approve all ${mine.size} of ${names[id] ?: mine.first().playerName}'s chores", modifier = Modifier.bleed(20.dp + LocalColumnInset.current).padding(top = 6.dp)) {
                     if (vm.approveAll(mine)) fb.levelUp() else fb.approve()
                 }
             }
@@ -199,7 +199,7 @@ private fun AdminContent(vm: AppViewModel, logs: List<ChoreLog>) {
             val waiting = l.status == Status.PENDING
             val who = names[l.playerId] ?: l.playerName
             val said = Phrase.sentence(who, l.choreName, Engine.dayOf(l.timestamp, vm.zone), vm.today())
-            Band(i, shown.size, Modifier.bleed(20.dp), done = !waiting, minHeight = 60.dp) {
+            Band(i, shown.size, Modifier.bleed(20.dp + LocalColumnInset.current), done = !waiting, minHeight = 60.dp) {
                 Column(Modifier.weight(1f)) {
                     Text(said, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = if (waiting) Palette.OCEAN.ink else Ink.copy(alpha = 0.75f))
                     Text(when (l.status) {

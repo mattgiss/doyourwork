@@ -57,7 +57,7 @@ struct PlayerView: View {
             }
             .foregroundStyle(Palette.heat.ink).tint(Palette.heat.ink)
             .padding(.horizontal, 16).padding(.bottom, 12)
-            .background(Palette.heat.stops[0].ignoresSafeArea(edges: .top))
+            .background(Palette.heat.stops[0].ignoresSafeArea(edges: [.top, .horizontal]))
 
             if let card {
                 if bonusPicking {

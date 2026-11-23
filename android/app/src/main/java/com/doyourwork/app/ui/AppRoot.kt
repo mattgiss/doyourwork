@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
+
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,6 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import com.doyourwork.app.widget.WidgetWriter
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.window.layout.FoldingFeature
 import com.doyourwork.app.AppViewModel
 
@@ -126,15 +129,26 @@ fun AppRoot(vm: AppViewModel, fold: FoldingFeature?) {
                 Row(Modifier.fillMaxSize()) {
                     Box(Modifier.width(listPaneWidth(windowWidth, hingeLeft)).fillMaxHeight()) { home() }
                     VerticalDivider()
-                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
-                        Box(Modifier.widthIn(max = MaxDetailPane).fillMaxSize()) {
-                            when {
-                                adminOpen -> AdminScreen(vm, logs, onBack = { adminOpen = false })
-                                showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
-                                selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null, onPuzzle = { puzzleId = selected.id },
-                                    onSnake = { snakeId = selected.id })
-                                else -> Text(if (players.isEmpty()) "> add players in the admin area" else "> pick a player", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.align(Alignment.Center).statusBarsPadding())
+                    BoxWithConstraints(Modifier.weight(1f).fillMaxHeight()) {
+                        // Rows stretched across a big tablet are hard to read, so the words keep to a
+                        // column of MaxDetailPane; the bands they sit on still run the pane's full
+                        // width (LocalColumnInset). Today's bands are short lines of a few words, so
+                        // they get the full width.
+                        val overview = !adminOpen && !showDares && selected == null
+                        val inset = if (overview) 0.dp else ((maxWidth - MaxDetailPane) / 2).coerceAtLeast(0.dp)
+                        CompositionLocalProvider(LocalColumnInset provides inset) {
+                            Box(Modifier.fillMaxSize()) {
+                                when {
+                                    adminOpen -> AdminScreen(vm, logs, onBack = { adminOpen = false })
+                                    showDares -> DaresScreen(vm, players, logs, shared, myId!!, onBack = { daresOpen = false })
+                                    selected != null -> PlayerScreen(vm, selected, logs, cards, hinge, onBack = null, onPuzzle = { puzzleId = selected.id },
+                                        onSnake = { snakeId = selected.id })
+                                    // Nobody picked yet: where everyone's at today, rather than half a screen of nothing.
+                                    else -> {
+                                        val snapshot = remember(logs, cards, family, shared, me) { WidgetWriter.snapshot(vm) }
+                                        TodayOverview(snapshot) { id -> adminOpen = false; daresOpen = false; selectedId = id }
+                                    }
+                                }
                             }
                         }
                     }

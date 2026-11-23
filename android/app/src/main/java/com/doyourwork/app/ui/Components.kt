@@ -101,11 +101,19 @@ fun TermButton(label: String, enabled: Boolean = true, modifier: Modifier = Modi
         onClick = onClick, enabled = enabled, shape = RectangleShape,
         colors = ButtonDefaults.buttonColors(containerColor = palette.stops[0], contentColor = palette.ink,
             disabledContainerColor = SurfaceDark, disabledContentColor = Done),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp + LocalColumnInset.current, vertical = 8.dp),
         modifier = modifier.fillMaxWidth().heightIn(min = 54.dp),
     ) { FitText(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
         color = LocalContentColor.current, shorter = shortLabel) }
 }
+
+/**
+ * How far in from each side of the right-hand pane its words sit, on a screen wide enough that
+ * full-width lines would be hard to read. The pane itself fills its space so its colour bands and
+ * buttons run edge to edge, not as an island with black on either side; only what's written on
+ * them keeps to the column. Zero everywhere else, phones included. As on iOS (`RootView`).
+ */
+val LocalColumnInset = androidx.compose.runtime.compositionLocalOf { 0.dp }
 
 /** A secondary action: a quiet dark band, so it never competes with the main one. */
 @Composable
@@ -113,7 +121,7 @@ fun QuietButton(label: String, modifier: Modifier = Modifier, onClick: () -> Uni
     Button(
         onClick = onClick, shape = RectangleShape,
         colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark, contentColor = Ink),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp + LocalColumnInset.current, vertical = 8.dp),
         modifier = modifier.fillMaxWidth().heightIn(min = 46.dp),
     ) { FitText(label, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = LocalContentColor.current) }
 }
@@ -129,7 +137,7 @@ fun Band(index: Int, count: Int, modifier: Modifier = Modifier, done: Boolean = 
     CompositionLocalProvider(LocalContentColor provides if (done) Done else palette.ink) {
         Row(
             modifier.fillMaxWidth().background(if (done) Bg else palette.band(index, count))
-                .heightIn(min = minHeight).padding(horizontal = 16.dp, vertical = 8.dp),
+                .heightIn(min = minHeight).padding(horizontal = 16.dp + LocalColumnInset.current, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), content = content,
         )
     }
@@ -139,7 +147,7 @@ fun Band(index: Int, count: Int, modifier: Modifier = Modifier, done: Boolean = 
 fun SectionLabel(text: String, color: Color = Done, padded: Boolean = true) {
     // Said plainly, as a heading in a sentence would be, not spaced-out capitals.
     Text(text.replaceFirstChar { it.uppercase() }, color = color, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(horizontal = if (padded) 16.dp else 0.dp).padding(top = 18.dp, bottom = 8.dp))
+        modifier = Modifier.padding(horizontal = if (padded) 16.dp + LocalColumnInset.current else 0.dp).padding(top = 18.dp, bottom = 8.dp))
 }
 
 /** Not a parent's verdict: another player got this chore in first today. */

@@ -63,12 +63,12 @@ fun DaresScreen(
     // Dares are in Clear's plum theme: a secret, after-dark corner of the app.
     CompositionLocalProvider(LocalPalette provides Palette.PLUM) {
     Column(Modifier.fillMaxSize().background(Bg)) {
-        Row(Modifier.fillMaxWidth().background(Palette.PLUM.stops[0]).statusBarsPadding().padding(start = 8.dp, end = 12.dp, top = 4.dp, bottom = 14.dp),
+        Row(Modifier.fillMaxWidth().background(Palette.PLUM.stops[0]).statusBarsPadding().padding(start = 8.dp + LocalColumnInset.current, end = 12.dp + LocalColumnInset.current, top = 4.dp, bottom = 14.dp),
             verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) TextButton(onClick = onBack) { Text("Back", color = Palette.PLUM.ink, fontWeight = FontWeight.Bold) }
             Text("Dares", color = Palette.PLUM.ink, fontSize = 24.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 12.dp))
         }
-        LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+        LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp + LocalColumnInset.current)) {
             item {
                 Text("Guess what someone will do today. If they do it and it's approved, you get ${Engine.DARE_GUESSER_POINTS} points " +
                     "and they get ${Engine.DARE_DOER_POINTS}. Nobody sees the dares until tomorrow.",
@@ -96,7 +96,7 @@ fun DaresScreen(
                 val pool = vm.pickable(target.id, logs)
                 itemsIndexed(pool, key = { _, c -> c.id }) { i, c ->
                     val on = mine.any { it.target == target.id && it.choreId == c.id }
-                    Box(Modifier.bleed(20.dp)) { ChoreRow(c.name, c.currentMinutes, c.escalLevel, checked = on, index = i, count = pool.size, picking = true, onToggle = {
+                    Box(Modifier.bleed(20.dp + LocalColumnInset.current)) { ChoreRow(c.name, c.currentMinutes, c.escalLevel, checked = on, index = i, count = pool.size, picking = true, onToggle = {
                         val why = vm.toggleDare(target, c.id)
                         note = why
                         if (why != null) fb.error() else if (on) fb.tick(false) else fb.dare()
