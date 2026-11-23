@@ -173,7 +173,7 @@ fun HomeScreen(
                 for (p in players) DailyLogRow(p, Engine.minutesByDay(p.id, logs, vm.store.poolById, zone), days, today)
             }
 
-            // Lets you confirm which build a phone is running (useful after an Obtainium update).
+            // Lets you confirm which build a phone is running (useful after installing an update by hand).
             val version = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "?" }
             Text("Version $version", style = MaterialTheme.typography.labelSmall, color = Done,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))

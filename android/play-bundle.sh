@@ -8,7 +8,7 @@
 # the upload keystore; the file name and variable from before the rename still work if those are missing. Keep that keystore and its password backed up somewhere other than this
 # Mac: if it's lost, Play can reset the upload key, but only after a support request.
 #
-# The github flavor is not for Play: it keeps going out through ./release.sh and Obtainium.
+# The github flavor is not for Play: it keeps going out as an APK on GitHub releases (./release.sh).
 set -euo pipefail
 cd "$(dirname "$0")"
 # Same order as app/build.gradle.kts: the new name first, then the legacy one from before the rename.

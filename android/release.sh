@@ -1,6 +1,6 @@
 #!/bin/bash
-# Build the Android app and publish it as a GitHub release, so phones running
-# Obtainium (pointed at https://github.com/mattgiss/doyourwork) pick it up as an update.
+# Build the Android app and publish it as a GitHub release, as an APK that installs
+# by hand over the copy already on a phone.
 #
 #   ./release.sh 0.4.0 "What changed, in a sentence or two."
 #
@@ -18,7 +18,7 @@ sed -i '' -E "s/versionCode = [0-9]+/versionCode = $CODE/; s/^        versionNam
 # (Only defaultConfig's versionName, the github one: the play flavor keeps its own.)
 
 export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
-# The github flavor (com.gyattchores.app, kept from the first name so phones keep updating; debug key) is what Obtainium installs. Both flavors'
+# The github flavor (com.gyattchores.app, kept from the first name so phones keep updating; debug key) is the APK on the GitHub release. Both flavors'
 # tests run, so the Play one can't quietly break.
 ./gradlew -q testGithubDebugUnitTest testPlayDebugUnitTest assembleGithubRelease
 APK="build/DOYOURWORK-$VERSION.apk"

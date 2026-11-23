@@ -4,8 +4,8 @@ Everything the Play Console asks for before an app can go to production, in roug
 it asks, with text ready to paste. Where only you can answer, it says so.
 
 This is for the **play** flavor (`com.doyourwork.app`). It's the same app as the
-**github** flavor (`com.gyattchores.app`) that goes out through `release.sh` and Obtainium
-(pointed at https://github.com/mattgiss/doyourwork); the two differ only in id, signing and
+**github** flavor (`com.gyattchores.app`) that goes out as an APK on GitHub releases
+(`release.sh`, installed by hand); the two differ only in id, signing and
 distribution. The github id keeps the app's first name because changing it would stop installed
 phones from updating; the play id had never been uploaded, so it uses the new name. Everything stays on the phone until someone
 taps Admin → Phones → "Add a phone", and then it travels to the family's other phones through
