@@ -174,11 +174,21 @@ private struct WatchesHinge: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(iOS 27.1, *) {
-            content.onHingeChange { _, now in
-                unfolded = now.hinge.map { $0.status == .fullyOpen || $0.status == .partiallyOpen } ?? false
+            content.onHingeChange { (_: DeviceHingeContext, now: DeviceHingeContext) in
+                unfolded = Self.isOpen(now.hinge)
             }
         } else {
             content
         }
+    }
+
+    /// Spelled out step by step: as one expression (an optional map, `||` and `??` over the
+    /// status's static members) it took CI's compiler longer than it allows to type-check.
+    @available(iOS 27.1, *)
+    private static func isOpen(_ hinge: DeviceHinge?) -> Bool {
+        guard let hinge else { return false }
+        let status: DeviceHinge.Status = hinge.status
+        if status == DeviceHinge.Status.fullyOpen { return true }
+        return status == DeviceHinge.Status.partiallyOpen
     }
 }
