@@ -85,7 +85,8 @@ struct SetupView: View {
         }
         TermButton(label: "Set up this device") { fb.tap(); step = .admin }.padding(.top, 12)
         // A new phone for a family that's already on another phone.
-        OutlineButton(label: "Join a family") { fb.tap(); joining = true }.padding(.horizontal, -20)
+        // The same width as "Set up this device" above it, inside the column.
+        OutlineButton(label: "Join a family") { fb.tap(); joining = true }
             .sheet(isPresented: $joining) { JoinSheet().appChrome(store, fb) }
         // A new phone for a family that already has a scoreboard saved as a file.
         BackupControls(canSave: false).padding(.top, 4)

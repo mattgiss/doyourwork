@@ -30,7 +30,7 @@ struct AdminView: View {
             }
             .foregroundStyle(Palette.ocean.ink).tint(Palette.ocean.ink)
             .padding(.horizontal, 16).padding(.bottom, 10)
-            .background(Palette.ocean.stops[0].ignoresSafeArea(edges: .top))
+            .background(Palette.ocean.stops[0].ignoresSafeArea(edges: [.top, .horizontal]))
 
             if authed { AdminContent() } else {
                 VStack(alignment: .leading, spacing: 12) {

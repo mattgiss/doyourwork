@@ -28,7 +28,7 @@ struct DaresView: View {
             }
             .foregroundStyle(Palette.plum.ink).tint(Palette.plum.ink)
             .padding(.horizontal, 16).padding(.bottom, 10)
-            .background(Palette.plum.stops[0].ignoresSafeArea(edges: .top))
+            .background(Palette.plum.stops[0].ignoresSafeArea(edges: [.top, .horizontal]))
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     Text("Guess what someone will do today. If they do it and it's approved, you get \(Engine.dareGuesserPoints) points and they get \(Engine.dareDoerPoints). Nobody sees the dares until tomorrow.")

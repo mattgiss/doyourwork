@@ -18,11 +18,15 @@ struct RootView: View {
     @State private var selectedId: String?
     @State private var adminOpen = false
     @State private var daresOpen = false
+    /// A foldable (the iPhone Duo) open on its inner screen, flat or half open: its fold runs top
+    /// to bottom down the middle of the screen, so the two panes split there rather than across it.
+    @State private var unfolded = false
 
     private var selected: Player? { store.players.first { $0.id == selectedId } }
 
     var body: some View {
         layout
+            .modifier(WatchesHinge(unfolded: $unfolded))
             // Sync on open and every 10 seconds while the app is on screen, as on Android.
             .task { while !Task.isCancelled { store.requestSync(); try? await Task.sleep(for: .seconds(10)) } }
             // The two daily notifications: asked about once the family is set up, and rescheduled
@@ -85,19 +89,44 @@ struct RootView: View {
 
     private var twoPane: some View {
         GeometryReader { geo in
+            let listWidth = Self.listWidth(geo, unfolded: unfolded)
             HStack(spacing: 0) {
-                // Roughly a third of the width, as on Android, kept between limits so the list is
-                // neither cramped on an upright iPad nor sprawling on a big one turned sideways.
                 home(highlighting: adminOpen ? nil : selectedId)
-                    .frame(width: min(max(geo.size.width * 0.36, 320), 420))
+                    .frame(width: listWidth)
                 Divider()
                 detail
-                    // Rows stretched across a 13-inch screen are hard to read; keep them column-width.
-                    .frame(maxWidth: 640)
+                    // Rows stretched across a 13-inch screen are hard to read, so the words keep to a
+                    // column. It's padding to the safe area rather than a narrower frame, so the
+                    // screen's colour bands and buttons still run edge to edge across the pane, not
+                    // as an island with black on either side. Today's bands are short lines of a
+                    // few words, so they get the full width.
+                    .safeAreaPadding(.horizontal, showsOverview ? 0 : Self.columnInset(paneWidth: geo.size.width - listWidth - 1))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
     }
+
+    /// How wide the home list is beside the open screen. Roughly a third of the width, as on
+    /// Android, kept between limits so the list is neither cramped on an upright iPad nor
+    /// sprawling on a big one turned sideways. On an unfolded iPhone Duo the split lands on the
+    /// fold instead (the middle of the whole screen, wherever the safe area puts this pane), so
+    /// neither side has anything in the crease, as Android does on a foldable in book posture.
+    /// How far in from each side of the right-hand pane its words sit, so they read as a column
+    /// of at most 640 points.
+    static func columnInset(paneWidth: CGFloat) -> CGFloat { max(0, (paneWidth - 640) / 2) }
+
+    static func listWidth(_ geo: GeometryProxy, unfolded: Bool) -> CGFloat {
+        let ordinary = min(max(geo.size.width * 0.36, 320), 420)
+        guard unfolded else { return ordinary }
+        let frame = geo.frame(in: .global)
+        let screenWidth = frame.minX + geo.size.width + geo.safeAreaInsets.trailing
+        let atFold = screenWidth / 2 - frame.minX
+        // Only when both halves still fit; otherwise the usual split is the better one.
+        return atFold >= 320 && geo.size.width - atFold >= 320 ? atFold : ordinary
+    }
+
+    /// Nothing's open on the right yet, so it shows `TodayOverview`.
+    private var showsOverview: Bool { !adminOpen && !daresIsOpen && selected == nil }
 
     private var daresIsOpen: Bool {
         daresOpen && store.me != nil && store.isLinked
@@ -112,7 +141,8 @@ struct RootView: View {
             // A fresh screen per player, so one kid's half-picked card doesn't carry over to the next.
             PlayerView(player: selected, showsBack: false).id(selected.id)
         } else {
-            Text(store.players.isEmpty ? "> add players in the admin area" : "> pick a player").foregroundStyle(.secondary)
+            // Nobody picked yet: where everyone's at today, rather than half a screen of nothing.
+            TodayOverview(onPick: { adminOpen = false; daresOpen = false; selectedId = $0.id })
         }
     }
 }
@@ -134,4 +164,37 @@ private struct FamilyLoadingView: View {
         }
         .padding(24)
     }
+}
+
+/// Keeps `unfolded` up to date on a foldable: true while its hinge is open, flat or partly, so the
+/// inner screen is lit. Hinge updates arrived with iOS 27.1; before that, and on devices with no
+/// hinge, it stays false.
+///
+/// The hinge API is only in the iOS 27.1 SDK (Xcode 27.1 and later, Swift 6.4). CI still builds
+/// with older Xcodes, which don't know these types at all, so there the app builds without it and
+/// simply doesn't split at the fold. Release builds come from a Mac with the new Xcode.
+private struct WatchesHinge: ViewModifier {
+    @Binding var unfolded: Bool
+
+    func body(content: Content) -> some View {
+        #if compiler(>=6.4)
+        if #available(iOS 27.1, *) {
+            content.onHingeChange { _, now in
+                unfolded = Self.isOpen(now.hinge)
+            }
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
+    }
+
+    #if compiler(>=6.4)
+    @available(iOS 27.1, *)
+    private static func isOpen(_ hinge: DeviceHinge?) -> Bool {
+        guard let status = hinge?.status else { return false }
+        return status == .fullyOpen || status == .partiallyOpen
+    }
+    #endif
 }

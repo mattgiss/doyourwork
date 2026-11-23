@@ -200,9 +200,9 @@ final class DOYOURWORKUITests: XCTestCase {
     }
 
     /// Whether the app is showing the list and a day side by side: with nobody picked yet, the
-    /// right-hand side asks you to pick a player.
+    /// right-hand side shows where everyone is today and asks you to pick someone.
     private func showsTwoPanes(_ app: XCUIApplication) -> Bool {
-        app.staticTexts["> pick a player"].waitForExistence(timeout: 3)
+        app.staticTexts["Pick someone to see their card."].waitForExistence(timeout: 3)
     }
 
     /// Taps an alert's button once the alert has stopped moving, by its position. On CI's
@@ -966,8 +966,8 @@ final class DOYOURWORKUITests: XCTestCase {
         let app = launch(["-resetData", "-demoData"])
         try XCTSkipUnless(showsTwoPanes(app), "the app's window is too narrow for two panes; give it the whole screen")
 
-        // Nothing picked yet: the list on the left, a prompt on the right.
-        XCTAssertTrue(app.staticTexts["> pick a player"].waitForExistence(timeout: wait))
+        // Nothing picked yet: the list on the left, today at a glance on the right.
+        XCTAssertTrue(app.staticTexts["Pick someone to see their card."].waitForExistence(timeout: wait))
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists)
         screenshot("ipad-01-nothing-picked", of: app)
 
@@ -975,7 +975,7 @@ final class DOYOURWORKUITests: XCTestCase {
         open("sam", in: app)
         XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
         XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists, "the home list stays on screen")
-        XCTAssertFalse(app.staticTexts["> pick a player"].exists)
+        XCTAssertFalse(app.staticTexts["Pick someone to see their card."].exists)
         XCTAssertFalse(app.buttons["Back"].exists, "nothing to go back to beside the list")
         let listRight = playerRow("sam", in: app).frame.maxX
         let dayLeft = app.staticTexts["Sent! Now it's waiting for an admin to look at it."].frame.minX

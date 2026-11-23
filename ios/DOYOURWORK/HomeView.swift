@@ -129,7 +129,10 @@ struct HomeView: View {
             .dynamicTypeSize(...DynamicTypeSize.xLarge)
             .padding(.top, 12).padding(.bottom, 10).padding(.horizontal, 6)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Palette.heat.band(band, of: bands))
+            // Kept inside the safe area: by default a background spreads under a side bar (the
+            // iPhone Duo's cover screen has one, holding the clock), making the last tile in a row
+            // look wider than the rest.
+            .background(Palette.heat.band(band, of: bands), ignoresSafeAreaEdges: [])
             .overlay(alignment: .topLeading) {
                 Text("\(place + 1)").font(.app(fixedSize: 14, weight: .black)).foregroundStyle(ink.opacity(0.6)).padding(.leading, 8).padding(.top, 6)
             }
