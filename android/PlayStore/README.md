@@ -19,7 +19,7 @@ from here, so treat field names and limits as a guide and trust the Console wher
 1. **The package name is permanent.** The play flavor is `com.doyourwork.app` (chosen 18 November
    2026). Once a bundle with that name is uploaded it can never be changed, and it shows in the
    app's Play Store address.
-2. **The version.** The Play build's version (1.2 now) matches the iPhone app's release with the same features (set in the play flavor in
+2. **The version.** The Play build's version (1.3 now) matches the iPhone app's release with the same features (set in the play flavor in
    `app/build.gradle.kts`; `release.sh` only changes the github build's version).
 3. **A closed test comes first.** New personal developer accounts have to run a closed test with
    at least 12 testers who stay opted in for 14 days before Google allows a production release.
@@ -185,6 +185,12 @@ Release notes for 1.2:
 
 ```
 Home screen widgets: your card today (minutes done, streak and the next chore), the whole family's scoreboard for the week, and yesterday's dares. Hold a Today widget and tap the pencil to pick whose card it shows.
+```
+
+Release notes for 1.3:
+
+```
+A new game after you send your card: Eat the dots, a snake game you steer with swipes. On tablets and foldables, the screen opens up: today's progress for the whole family beside the list, and the two sides split at the fold.
 ```
 
 ## Launch
