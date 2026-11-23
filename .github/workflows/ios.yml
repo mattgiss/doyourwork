@@ -11,7 +11,10 @@ name: iOS
 # game rules: change a rule there and this says whether the native ports still agree.
 
 on:
+  pull_request:
+    branches: [main]
   push:
+    branches: [main]
     paths:
       - 'ios/**'
       - 'native/**'
@@ -26,8 +29,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Every PR to main runs this workflow, so its checks always report and main can require them.
+  # This works out whether the PR touches the iOS app or the shared test data; the jobs below skip themselves when it doesn't,
+  # and a skipped job counts as passed. Pushes to main and manual runs always run everything.
+  changes:
+    name: What changed (ios)
+    runs-on: ubuntu-latest
+    outputs:
+      ios: ${{ steps.diff.outputs.ios }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then echo "ios=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          changed=$(git diff --name-only "$BASE...$HEAD")
+          echo "Changed in this PR:"; echo "$changed" | sed 's/^/  /'
+          if echo "$changed" | grep -qE '^(ios/|native/|android/app/src/test/resources/golden\.json$|android/app/src/main/assets/puzzles\.json$|\.github/workflows/ios\.yml$)'; then echo "ios=true"; else echo "ios=false"; fi >> "$GITHUB_OUTPUT"
+
   fixtures:
     name: Test data matches the web engine
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -50,6 +78,8 @@ jobs:
 
   core:
     name: DoYourWorkCore tests
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
     runs-on: ubuntu-latest
     container: swift:6.0-noble
     steps:
@@ -60,6 +90,8 @@ jobs:
 
   app:
     name: Build and UI-test app (iOS Simulator)
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
@@ -143,6 +175,8 @@ jobs:
   # ios/AppStore/SUBMISSION.md says which folder goes where.
   store-screenshots:
     name: App Store screenshots
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
     runs-on: macos-15
     timeout-minutes: 75   # about half an hour when all is well: three simulators boot from cold
     steps:
@@ -254,6 +288,8 @@ jobs:
 
   release:
     name: Release archive (unsigned, newest Xcode)
+    needs: changes
+    if: needs.changes.outputs.ios == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
