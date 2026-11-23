@@ -36,10 +36,17 @@ final class DOYOURWORKUITests: XCTestCase {
         field.typeText(text)
     }
 
-    /// Opens the admin area and unlocks it.
+    /// Opens the admin area and unlocks it. On a slow simulator the tap on Admin, right after the
+    /// home screen loads, can be lost, so tap again while the code field hasn't shown up.
     private func unlockAdmin(in app: XCUIApplication, code: String? = nil) {
-        app.buttons["Admin"].tap()
-        type(code ?? adminCode, into: app.secureTextFields.firstMatch)
+        let admin = app.buttons["Admin"]
+        let field = app.secureTextFields.firstMatch
+        XCTAssertTrue(admin.waitForExistence(timeout: wait))
+        for _ in 0..<3 where !field.exists {
+            if admin.isHittable { admin.tap() }
+            _ = field.waitForExistence(timeout: wait / 3)
+        }
+        type(code ?? adminCode, into: field)
         app.buttons["Unlock"].tap()
         XCTAssertTrue(app.segmentedControls.firstMatch.waitForExistence(timeout: wait), "the right code opens the admin area")
     }
