@@ -169,26 +169,32 @@ private struct FamilyLoadingView: View {
 /// Keeps `unfolded` up to date on a foldable: true while its hinge is open, flat or partly, so the
 /// inner screen is lit. Hinge updates arrived with iOS 27.1; before that, and on devices with no
 /// hinge, it stays false.
+///
+/// The hinge API is only in the iOS 27.1 SDK (Xcode 27.1 and later, Swift 6.4). CI still builds
+/// with older Xcodes, which don't know these types at all, so there the app builds without it and
+/// simply doesn't split at the fold. Release builds come from a Mac with the new Xcode.
 private struct WatchesHinge: ViewModifier {
     @Binding var unfolded: Bool
 
     func body(content: Content) -> some View {
+        #if compiler(>=6.4)
         if #available(iOS 27.1, *) {
-            content.onHingeChange { (_: DeviceHingeContext, now: DeviceHingeContext) in
+            content.onHingeChange { _, now in
                 unfolded = Self.isOpen(now.hinge)
             }
         } else {
             content
         }
+        #else
+        content
+        #endif
     }
 
-    /// Spelled out step by step: as one expression (an optional map, `||` and `??` over the
-    /// status's static members) it took CI's compiler longer than it allows to type-check.
+    #if compiler(>=6.4)
     @available(iOS 27.1, *)
     private static func isOpen(_ hinge: DeviceHinge?) -> Bool {
-        guard let hinge else { return false }
-        let status: DeviceHinge.Status = hinge.status
-        if status == DeviceHinge.Status.fullyOpen { return true }
-        return status == DeviceHinge.Status.partiallyOpen
+        guard let status = hinge?.status else { return false }
+        return status == .fullyOpen || status == .partiallyOpen
     }
+    #endif
 }
