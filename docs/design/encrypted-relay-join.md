@@ -125,7 +125,7 @@ the engines in step. An iPhone and an Android phone must produce and open the sa
     later "Add a phone" sends everything.
   - **iOS:** one scheme, "DOYOURWORK", with the camera prompt in every build.
   - **Android:** the `family` and `public` flavors become `github` (com.gyattchores.app, the
-    debug key, what Obtainium installs) and `play` (com.doyourwork.app, the upload key).
+    debug key, the APK on GitHub releases) and `play` (com.doyourwork.app, the upload key).
     They differ only in id and signing; INTERNET, CAMERA and the QR scanner are in every build.
   - **The web app** (native/tools/web-engine.html, still served at doyourwork.today) no longer
     syncs; it stays as the source of truth for the game rules. The Discord bots that read the
@@ -141,7 +141,7 @@ Do it in one sitting, with every phone in the room. Until a phone has moved, it 
 through the old tables, and changes don't cross between moved and unmoved phones.
 
 **Before**
-1. Update every phone. iPhones and iPads update from TestFlight, Android phones from Obtainium.
+1. Update every phone. iPhones and iPads update from TestFlight, Android phones from the APK on GitHub releases.
    The version line on the home screen shows the build.
 2. On each phone, check the home screen says "Synced". Joining drops anything a phone hasn't
    sent yet.
