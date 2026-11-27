@@ -373,15 +373,15 @@ private fun CardRun(
                     val minutesLeft = com.doyourwork.app.engine.PuzzleTime.minutesLeft(vm.puzzleUsedMs(player.id))
                     if (minutesLeft > 0) {
                         val level = vm.puzzleLevel(player.id)
-                        // On a narrow phone the minutes left matter more than the puzzle's name.
-                        TermButton("Play level $level · ${Phrase.count(minutesLeft, "minute")} left today",
-                            shortLabel = "Play level $level · $minutesLeft min left") {
-                            fb.unlock(); onPuzzle()
-                        }
-                        // The second game, sharing the same hour.
-                        QuietButton("Play snake") { fb.unlock(); onSnake() }
+                        val best = vm.snakeBest(player.id)
+                        // The time left gets its own line, so each button is just its game.
+                        Text("${Phrase.count(minutesLeft, "minute")} of games left today", color = Done, fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current).padding(top = 8.dp, bottom = 4.dp))
+                        TermButton("Clear the grid · level $level") { fb.unlock(); onPuzzle() }
+                        // The second game, sharing the same 30 minutes.
+                        QuietButton(if (best > 0) "Eat the dots · best $best" else "Eat the dots") { fb.unlock(); onSnake() }
                     } else {
-                        Text("That's your hour of puzzles for today. See you tomorrow!", color = Done,
+                        Text("That's your 30 minutes of games for today. See you tomorrow!", color = Done,
                             modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current, vertical = 18.dp))
                     }
                     if (bonusLeft > 0) QuietButton("Do a bonus round") { fb.tap(); onBonus() }

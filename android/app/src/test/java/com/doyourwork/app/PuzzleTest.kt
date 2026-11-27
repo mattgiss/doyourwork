@@ -126,13 +126,13 @@ class PuzzleTest {
         assertEquals(listOf(2, 3, 2, 3), (5..8).map { four.index(it) })
     }
 
-    @Test fun anHourOfPuzzleADay() {
+    @Test fun thirtyMinutesOfGamesADay() {
         val t = com.doyourwork.app.engine.PuzzleTime
-        assertEquals(60, t.PUZZLE_MINUTES_PER_DAY)
-        assertEquals(60, t.minutesLeft(0))
-        assertEquals(60, t.minutesLeft(30_000))          // half a minute in still shows 60
-        assertEquals(1, t.minutesLeft(59 * 60_000L + 1))  // "1 min left" until it's really gone
-        assertEquals(0, t.minutesLeft(60 * 60_000L))
+        assertEquals(30, t.PUZZLE_MINUTES_PER_DAY)
+        assertEquals(30, t.minutesLeft(0))
+        assertEquals(30, t.minutesLeft(30_000))          // half a minute in still shows 30
+        assertEquals(1, t.minutesLeft(29 * 60_000L + 1))  // "1 min left" until it's really gone
+        assertEquals(0, t.minutesLeft(30 * 60_000L))
         assertEquals(0L, t.msLeft(90 * 60_000L))          // never below zero
     }
 }

@@ -142,7 +142,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
         }
     }
 
-    // An hour a day: counted only while this screen is in front, so locking the phone or switching
+    // 30 minutes a day, shared with Eat the dots: counted only while this screen is in front, so locking the phone or switching
     // apps pauses it. When it runs out the board is covered and only "back" is left.
     var msLeft by remember(player.id) { mutableLongStateOf(vm.puzzleMsLeft(player.id)) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -312,7 +312,7 @@ fun PuzzleScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("Time's up", color = Accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium, letterSpacing = 3.sp)
-                Text("That's your hour of puzzles for today. See you tomorrow!", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Text("That's your 30 minutes of games for today. See you tomorrow!", color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center)
                 TextButton(onClick = { fb.tap(); onBack() }) { Text("Back") }
             }

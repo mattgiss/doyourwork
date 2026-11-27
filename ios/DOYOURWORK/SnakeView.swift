@@ -3,7 +3,7 @@ import DoYourWorkCore
 
 /// The second reward game, "EAT THE DOTS": a snake-style game. Swipe anywhere to steer the line,
 /// eat the dots to grow, and don't hit a wall or your own tail. It gets faster as it grows. It
-/// shares the puzzle's hour a day, and each player's best score is kept on this phone.
+/// shares the puzzle's 30 minutes a day, and each player's best score is kept on this phone.
 struct SnakeView: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
@@ -41,9 +41,7 @@ struct SnakeView: View {
                         .position(x: geo.size.width / 2, y: geo.size.height / 2)
                 }
                 .padding(20)
-                Text("Best \(max(best, game.score))").foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20).padding(.vertical, 12)
+                Spacer().frame(height: 12)
             }
             .keyframeAnimator(initialValue: 0.0, trigger: shakeTrigger) { content, k in
                 content.offset(x: CGFloat(k) * 10, y: CGFloat(-k) * 6)
@@ -90,7 +88,7 @@ struct SnakeView: View {
                 if let event = game.step() { handle(event) }
             }
         }
-        // The shared hour a day, counted the same way as the puzzle's.
+        // The shared 30 minutes a day, counted the same way as the puzzle's.
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             var last = Date()
@@ -107,7 +105,7 @@ struct SnakeView: View {
     private var header: some View {
         HStack(spacing: 12) {
             Button("Back") { fb.tap(); dismiss() }.fixedSize().accessibilityIdentifier("snake-back")
-            Text("Eat the dots").font(.app(.caption)).kerning(3).foregroundStyle(.secondary).lineLimit(1)
+            Text("Eat the dots · best \(max(best, game.score))").font(.app(.caption)).kerning(3).foregroundStyle(.secondary).lineLimit(1)
                 .minimumScaleFactor(0.6)
             Spacer(minLength: 0)
             Text("Score \(game.score)").font(.app(.headline)).foregroundStyle(Theme.accent).fixedSize()
@@ -265,7 +263,7 @@ private struct SnakeTimeUpCard: View {
         ZStack {
             Color.appBackground.opacity(0.96).ignoresSafeArea()
             VStack(spacing: 20) {
-                Text("That's your hour of puzzles for today. See you tomorrow!")
+                Text("That's your 30 minutes of games for today. See you tomorrow!")
                     .font(.app(.headline)).multilineTextAlignment(.center)
                 Button("Back", action: onBack).font(.app(.headline)).foregroundStyle(Theme.accent)
                     .frame(minHeight: 44).accessibilityIdentifier("snake-timeup-back")

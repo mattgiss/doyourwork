@@ -117,7 +117,7 @@ data class PuzzlePack(val version: Int, val levels: List<Level>) {
  * levels. Same rule as iOS.
  */
 object PuzzleTime {
-    const val PUZZLE_MINUTES_PER_DAY = 60
+    const val PUZZLE_MINUTES_PER_DAY = 30
     const val LIMIT_MS = PUZZLE_MINUTES_PER_DAY * 60_000L
 
     fun msLeft(usedMs: Long): Long = (LIMIT_MS - usedMs).coerceAtLeast(0)

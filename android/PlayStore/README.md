@@ -77,7 +77,7 @@ WHAT KEEPS IT GOING
 • Approved chores earn points. Levels are shown as version numbers: v1.0, v1.1 and up.
 • A daily streak multiplies what you earn.
 • A weekly leaderboard and a 30-day log show how everyone is doing.
-• Send your card and a puzzle opens, with up to an hour of play a day.
+• Send your card and a puzzle opens, with up to 30 minutes of games a day.
 • Finished early? A bonus round lets you log extra chores.
 • Fifteen colour themes, and everyone can give themselves a display name.
 

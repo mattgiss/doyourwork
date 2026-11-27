@@ -142,9 +142,14 @@ final class DOYOURWORKUITests: XCTestCase {
         app.buttons.matching(NSPredicate(format: "identifier == 'main' AND NOT (label BEGINSWITH 'Make a dare')")).firstMatch
     }
 
-    /// The puzzle's play button. On a narrow phone it leaves out the puzzle's name, so match the end.
-    private func playButton(level: Int, minutes: Int, in app: XCUIApplication) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ AND label CONTAINS %@", "Play level \(level) · ", " \(minutes) min")).firstMatch
+    /// The puzzle's play button. The time left is on its own line ([timeLeft]).
+    private func playButton(level: Int, in app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label == %@", "Clear the grid · level \(level)")).firstMatch
+    }
+
+    /// The "N minutes of games left today" line above the game buttons.
+    private func timeLeft(minutes: Int, in app: XCUIApplication) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "identifier == 'games-time-left' AND label BEGINSWITH %@", "\(minutes) minute")).firstMatch
     }
 
     private func uncheckedChores(in app: XCUIApplication) -> XCUIElementQuery {
@@ -682,10 +687,10 @@ final class DOYOURWORKUITests: XCTestCase {
 
         // Locked until the card is in.
         XCTAssertTrue(app.staticTexts["The puzzle opens once you send your card."].waitForExistence(timeout: wait))
-        XCTAssertFalse(playButton(level: 1, minutes: 60, in: app).exists)
+        XCTAssertFalse(playButton(level: 1, in: app).exists)
         checkOffEverything(in: app).tap()
 
-        let play = playButton(level: 1, minutes: 60, in: app)
+        let play = playButton(level: 1, in: app)
         XCTAssertTrue(play.waitForExistence(timeout: wait), "a submitted card unlocks the puzzle")
         screenshot("puzzle-1-unlocked", of: app)
         play.tap()
@@ -733,7 +738,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["4 blocks left"].exists)
         screenshot("puzzle-4-level-2", of: app)
         app.buttons["puzzle-back"].tap()
-        XCTAssertTrue(playButton(level: 2, minutes: 60, in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(playButton(level: 2, in: app).waitForExistence(timeout: wait))
     }
 
     /// Submitting today's card unlocks snake too. A swipe starts it; running into the wall ends the
@@ -771,7 +776,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(snake.waitForExistence(timeout: wait))
     }
 
-    /// The puzzle gets an hour a day per player. The play button counts down; when the hour runs
+    /// The games get 30 minutes a day per player. The play button counts down; when the time runs
     /// out mid-level the board is covered and only "back" works, and the day screen says so.
     func testThePuzzleStopsAfterAnHourADay() {
         let app = launch(["-resetData", "-demoFamily", "-puzzleSecondsLeft", "125"])
@@ -779,23 +784,25 @@ final class DOYOURWORKUITests: XCTestCase {
         app.buttons["Suggest a 25-minute card"].tap()
         mainButton(in: app).tap()
         checkOffEverything(in: app).tap()
-        let play = playButton(level: 1, minutes: 3, in: app)
+        let play = playButton(level: 1, in: app)
         XCTAssertTrue(play.waitForExistence(timeout: wait), "125 seconds left shows as 3 minutes")
+        XCTAssertTrue(timeLeft(minutes: 3, in: app).exists, "125 seconds left shows as 3 minutes")
         app.terminate()
 
         // Down to the last few seconds: they run out while the board is up.
         let again = launch(["-puzzleSecondsLeft", "3"])
         open("riley", in: again)
-        let last = playButton(level: 1, minutes: 1, in: again)
+        let last = playButton(level: 1, in: again)
         XCTAssertTrue(last.waitForExistence(timeout: wait))
+        XCTAssertTrue(timeLeft(minutes: 1, in: again).exists)
         last.tap()
         XCTAssertTrue(again.descendants(matching: .any)["cell-0"].waitForExistence(timeout: wait))
-        let covered = again.staticTexts["That's your hour of puzzles for today. See you tomorrow!"]
+        let covered = again.staticTexts["That's your 30 minutes of games for today. See you tomorrow!"]
         XCTAssertTrue(covered.waitForExistence(timeout: 10), "the board is covered when time runs out")
         screenshot("puzzle-time-up", of: again)
         again.buttons["puzzle-timeup-back"].tap()
-        XCTAssertTrue(again.staticTexts["That's your hour of puzzles for today. See you tomorrow!"].waitForExistence(timeout: wait))
-        XCTAssertFalse(again.buttons.matching(NSPredicate(format: "label BEGINSWITH '> PLAY'")).firstMatch.exists)
+        XCTAssertTrue(again.staticTexts["That's your 30 minutes of games for today. See you tomorrow!"].waitForExistence(timeout: wait))
+        XCTAssertFalse(again.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Clear the grid'")).firstMatch.exists)
     }
 
     /// A display name is a nickname on top of the username: it shows everywhere the player does,
