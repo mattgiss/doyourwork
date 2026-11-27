@@ -117,7 +117,7 @@ public struct PuzzlePack: Decodable, Sendable {
 /// screen with the app in front, and starts over at local midnight. Kept per player on the
 /// device, like levels; it doesn't sync. Stored as "yyyy-MM-dd|seconds".
 public struct PuzzleTime: Equatable, Sendable {
-    public static let minutesPerDay = 60
+    public static let minutesPerDay = 30
     public static let secondsPerDay = Double(minutesPerDay * 60)
 
     public var day: String

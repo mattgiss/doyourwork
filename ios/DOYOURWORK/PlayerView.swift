@@ -266,17 +266,17 @@ private struct CardRunView: View {
                     let minutesLeft = store.puzzleMinutesLeft(player.id)
                     if minutesLeft > 0 {
                         let level = store.puzzleLevel(player.id)
-                        let play = { fb.unlock(); puzzleOpen = true }
-                        // On a narrow phone (an iPhone 16e) the minutes left matter more than the puzzle's name.
-                        ViewThatFits(in: .horizontal) {
-                            TermButton(label: "Play level \(level) · \(Phrase.count(minutesLeft, "minute")) left today", action: play)
-                            TermButton(label: "Play level \(level) · \(minutesLeft) min left", action: play)
-                        }
-                        // The second game, sharing the same hour.
-                        OutlineButton(label: "Play snake") { fb.unlock(); snakeOpen = true }
+                        let best = store.snakeBest(player.id)
+                        // The time left gets its own line, so each button is just its game.
+                        Text("\(Phrase.count(minutesLeft, "minute")) of games left today").font(.app(.callout)).fontWeight(.semibold)
+                            .foregroundStyle(Color.done).padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 4)
+                            .accessibilityIdentifier("games-time-left")
+                        TermButton(label: "Clear the grid · level \(level)") { fb.unlock(); puzzleOpen = true }
+                        // The second game, sharing the same 30 minutes.
+                        OutlineButton(label: best > 0 ? "Eat the dots · best \(best)" : "Eat the dots") { fb.unlock(); snakeOpen = true }
                             .accessibilityIdentifier("play-snake")
                     } else {
-                        Text("That's your hour of puzzles for today. See you tomorrow!").foregroundStyle(Color.done).padding(.horizontal, 20).padding(.vertical, 18)
+                        Text("That's your 30 minutes of games for today. See you tomorrow!").foregroundStyle(Color.done).padding(.horizontal, 20).padding(.vertical, 18)
                     }
                     if bonusLeft > 0 { OutlineButton(label: "Do a bonus round") { fb.tap(); onBonus() } }
                 }

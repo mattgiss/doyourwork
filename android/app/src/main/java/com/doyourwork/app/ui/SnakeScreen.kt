@@ -81,7 +81,7 @@ import kotlin.random.Random
 /**
  * The second reward game, "EAT THE DOTS": a snake-style game. Swipe anywhere to steer the line,
  * eat the dots to grow, and don't hit a wall or your own tail. It gets faster as it grows. It
- * shares the puzzle's hour a day, and each player's best score is kept on this phone.
+ * shares the puzzle's 30 minutes a day, and each player's best score is kept on this phone.
  */
 @Composable
 fun SnakeScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
@@ -226,7 +226,7 @@ fun SnakeScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
             frame   // read, so a step redraws
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { fb.tap(); onBack() }) { Text("Back") }
-                FitText("Eat the dots", style = MaterialTheme.typography.labelMedium, letterSpacing = 3.sp,
+                FitText("Eat the dots · best ${maxOf(best, game.score)}", style = MaterialTheme.typography.labelMedium, letterSpacing = 3.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, minScale = 0.5f, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
                 Text("Score ${game.score}", color = Accent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(end = 12.dp))
@@ -247,14 +247,13 @@ fun SnakeScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                     Modifier.size((cell * game.width).dp, (cell * game.height).dp)
                         .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f))
                         .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                        .semantics { contentDescription = "Snake board, length ${game.length}" },
+                        .semantics { contentDescription = "Eat the dots board, length ${game.length}" },
                 ) {
                     frame
                     drawSnake(game, size.width / game.width, if (calm) 0f else pulse, dotColor, bg)
                 }
             }
-            Text("Best ${maxOf(best, game.score)}", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
+            Spacer(Modifier.height(12.dp))
         }
 
         if (flash.value > 0f) Box(Modifier.fillMaxSize().background(Accent.copy(alpha = flash.value)))
@@ -283,7 +282,7 @@ fun SnakeScreen(vm: AppViewModel, player: Player, onBack: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("Time's up", color = Accent, fontWeight = FontWeight.Black, style = MaterialTheme.typography.headlineMedium, letterSpacing = 3.sp)
-                Text("That's your hour of puzzles for today. See you tomorrow!", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Text("That's your 30 minutes of games for today. See you tomorrow!", color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center)
                 TextButton(onClick = { fb.tap(); onBack() }) { Text("Back") }
             }

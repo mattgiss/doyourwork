@@ -49,7 +49,7 @@ struct PuzzleView: View {
     @State private var shakeTrigger = 0
     @State private var shakeStrength = 0.0
     @State private var cell: CGFloat = 40
-    /// Today's hour of puzzles is used up: the board is covered and only "back" works.
+    /// Today's 30 minutes of games are used up: the board is covered and only "back" works.
     @State private var timeUp = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -478,7 +478,7 @@ private struct LevelUpCard: View {
     }
 }
 
-/// Covers the board once today's hour of puzzles is gone. The level in progress isn't kept, the
+/// Covers the board once today's 30 minutes of games are gone. The level in progress isn't kept, the
 /// same as leaving it: it starts over tomorrow.
 private struct TimeUpCard: View {
     let onBack: () -> Void
@@ -486,7 +486,7 @@ private struct TimeUpCard: View {
         ZStack {
             Color.appBackground.opacity(0.96).ignoresSafeArea()
             VStack(spacing: 20) {
-                Text("That's your hour of puzzles for today. See you tomorrow!")
+                Text("That's your 30 minutes of games for today. See you tomorrow!")
                     .font(.app(.headline)).multilineTextAlignment(.center)
                 Button("Back", action: onBack).font(.app(.headline)).foregroundStyle(Theme.accent)
                     .frame(minHeight: 44).accessibilityIdentifier("puzzle-timeup-back")
