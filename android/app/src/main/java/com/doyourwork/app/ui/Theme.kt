@@ -3,6 +3,17 @@ package com.doyourwork.app.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.unit.dp
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -67,17 +78,36 @@ data class AppTheme(val id: String, val name: String, val bg: Color, val main: C
     }
 }
 
-/** This phone's theme. Read during drawing, so a change redraws every screen. */
+/**
+ * How the whole app is lit, chosen per phone, on top of the theme's colours: dark (the theme as it
+ * is), light (a pale background with dark text), or glass (see-through panels over a wash of the
+ * theme's colours). The theme's main and band colours stay the same. As on iOS (`Appearance`).
+ */
+enum class Appearance(val id: String, val label: String) {
+    DARK("dark", "Dark"), LIGHT("light", "Light"), GLASS("glass", "Glass");
+    companion object { fun of(id: String?) = entries.firstOrNull { it.id == id } ?: DARK }
+}
+
+/** This phone's theme and appearance. Read during drawing, so a change redraws every screen. */
 object Themes {
     var current by mutableStateOf(AppTheme.CLEAR)
+    var appearance by mutableStateOf(Appearance.DARK)
     private const val KEY = "theme"
+    private const val APPEARANCE_KEY = "appearance"
+    val isLight get() = appearance == Appearance.LIGHT
+    val isGlass get() = appearance == Appearance.GLASS
     fun load(ctx: Context) {
-        val id = ctx.getSharedPreferences("look", Context.MODE_PRIVATE).getString(KEY, null)
-        current = AppTheme.ALL.firstOrNull { it.id == id } ?: AppTheme.CLEAR
+        val prefs = ctx.getSharedPreferences("look", Context.MODE_PRIVATE)
+        current = AppTheme.ALL.firstOrNull { it.id == prefs.getString(KEY, null) } ?: AppTheme.CLEAR
+        appearance = Appearance.of(prefs.getString(APPEARANCE_KEY, null))
     }
     fun pick(ctx: Context, t: AppTheme) {
         current = t
         ctx.getSharedPreferences("look", Context.MODE_PRIVATE).edit().putString(KEY, t.id).apply()
+    }
+    fun pick(ctx: Context, a: Appearance) {
+        appearance = a
+        ctx.getSharedPreferences("look", Context.MODE_PRIVATE).edit().putString(APPEARANCE_KEY, a.id).apply()
     }
 }
 
@@ -87,11 +117,49 @@ val Warn = Color(0xFFEDB82A)
 val Bad = Color(0xFFFF4D3D)
 val Good = Color(0xFF6BC276)
 /** Where a finished row goes, and quiet text. */
-val Done: Color get() = Themes.current.muted
-val SurfaceDark: Color get() = Themes.current.surface
-/** The theme's background and ordinary text. */
-val Bg: Color get() = Themes.current.bg
-val Ink: Color get() = Themes.current.text
+val Done: Color get() = if (Themes.isLight) Color(0xFF6E6E73) else Themes.current.muted
+/** Tiles, cards and quiet buttons. In glass it's see-through, so the wash behind shows. */
+val SurfaceDark: Color get() = when (Themes.appearance) {
+    Appearance.DARK -> Themes.current.surface
+    Appearance.LIGHT -> Color.White
+    Appearance.GLASS -> Color.White.copy(alpha = 0.13f)
+}
+/** The background behind everything. In glass, a deep shade of the theme under the wash ([appBackdrop]). */
+val Bg: Color get() = when (Themes.appearance) {
+    Appearance.DARK -> Themes.current.bg
+    Appearance.LIGHT -> lerp(Color(0xFFF2F2F7), Themes.current.main, 0.015f)
+    Appearance.GLASS -> lerp(Themes.current.bg, Color.Black, 0.35f)
+}
+/** Ordinary text on the background. */
+val Ink: Color get() = if (Themes.isLight) Color(0xFF141416) else Themes.current.text
+/** A button or field inside a card: the background again, let through a little in glass. */
+val InCard: Color get() = if (Themes.isGlass) Bg.copy(alpha = 0.35f) else Bg
+
+/**
+ * What's behind every screen: the plain background, or in glass a wash of the theme's colours
+ * (the first band colour at 75% top left, through the background, to the last at 55% bottom right,
+ * and a glow of the muted colour at 45% from the bottom left) for the see-through panels to sit on.
+ */
+fun Modifier.appBackdrop(): Modifier = drawBehind {
+    drawRect(Bg)
+    if (Themes.isGlass) {
+        val stops = Themes.current.heat.stops
+        drawRect(Brush.linearGradient(listOf(stops[0].copy(alpha = 0.75f), Bg.copy(alpha = 0.2f), stops.last().copy(alpha = 0.55f)),
+            start = Offset.Zero, end = Offset(size.width, size.height)))
+        drawRect(Brush.radialGradient(listOf(Themes.current.sub.copy(alpha = 0.45f), Color.Transparent),
+            center = Offset(0f, size.height), radius = 420.dp.toPx()))
+    }
+}
+
+/**
+ * A tile's or card's fill: the surface colour, with a faint white outline in glass and a soft
+ * shadow in light. As on iOS (`panel`).
+ */
+fun Modifier.panel(shape: Shape): Modifier = when (Themes.appearance) {
+    Appearance.GLASS -> background(SurfaceDark, shape).border(0.75.dp, Color.White.copy(alpha = 0.18f), shape)
+    Appearance.LIGHT -> shadow(3.dp, shape, ambientColor = Color.Black.copy(alpha = 0.3f), spotColor = Color.Black.copy(alpha = 0.3f)).background(SurfaceDark, shape)
+    Appearance.DARK -> background(SurfaceDark, shape)
+}
 /** The puzzle's two colours of block. */
 val BlockA: Color get() = if (Themes.current.isClear) Color(0xFFD90015) else Themes.current.main
 val BlockB: Color get() = if (Themes.current.isClear) Color(0xFF45AAC0) else lerp(Themes.current.sub, Themes.current.text, 0.35f)
@@ -125,7 +193,7 @@ val AppFont = FontFamily(
 )
 
 /**
- * Dark only, like Clear: black behind everything, the colour is in the rows. One typeface
+ * The theme's colours in this phone's appearance (dark, light or glass); the colour is in the rows. One typeface
  * everywhere: Schibsted Grotesk (SIL Open Font License), bundled so it looks the same as on the iPhone.
  */
 @Composable
@@ -133,13 +201,34 @@ fun DoYourWorkTheme(content: @Composable () -> Unit) {
     val ctx = LocalContext.current
     LaunchedEffect(Unit) { Themes.load(ctx) }
     val t = Themes.current
-    val scheme = darkColorScheme(
+    // The appearance's colours, so dialogs, fields and switches follow it too. Glass's dialogs sit on
+    // the plain (unwashed) background, since a dialog has no wash behind it.
+    val bg = Bg
+    val text = Ink
+    val muted = Done
+    val surface = if (Themes.isGlass) lerp(bg, Color.White, 0.1f) else SurfaceDark
+    val scheme = (if (Themes.isLight) lightColorScheme(
         primary = Accent, onPrimary = t.ink, secondary = Accent,
-        background = t.bg, onBackground = t.text, surface = t.bg, onSurface = t.text,
-        surfaceVariant = t.surface, onSurfaceVariant = t.muted, outline = t.muted,
-        surfaceContainer = t.surface, surfaceContainerHigh = lerp(t.bg, t.text, 0.1f), surfaceContainerHighest = lerp(t.bg, t.text, 0.13f),
-        secondaryContainer = lerp(t.bg, t.text, 0.16f), onSecondaryContainer = t.text, error = Bad,
-    )
+        background = bg, onBackground = text, surface = bg, onSurface = text,
+        surfaceVariant = Color(0xFFE6E6EB), onSurfaceVariant = muted, outline = muted,
+        surfaceContainer = Color.White, surfaceContainerHigh = Color.White, surfaceContainerHighest = Color(0xFFF7F7FA),
+        surfaceContainerLow = Color.White, secondaryContainer = Color(0xFFE6E6EB), onSecondaryContainer = text, error = Bad,
+    ) else darkColorScheme(
+        primary = Accent, onPrimary = t.ink, secondary = Accent,
+        background = bg, onBackground = text, surface = bg, onSurface = text,
+        surfaceVariant = surface, onSurfaceVariant = muted, outline = muted,
+        surfaceContainer = surface, surfaceContainerHigh = lerp(bg, text, 0.1f), surfaceContainerHighest = lerp(bg, text, 0.13f),
+        secondaryContainer = lerp(bg, text, 0.16f), onSecondaryContainer = text, error = Bad,
+    ))
+    // The status bar and the system's controls follow: dark icons in light, light ones otherwise.
+    val light = Themes.isLight
+    val activity = ctx as? androidx.activity.ComponentActivity
+    androidx.compose.runtime.DisposableEffect(light, activity) {
+        val clear = android.graphics.Color.TRANSPARENT
+        val style = if (light) androidx.activity.SystemBarStyle.light(clear, clear) else androidx.activity.SystemBarStyle.dark(clear)
+        activity?.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+        onDispose { }
+    }
     val ty = Typography()
     fun TextStyle.m() = copy(fontFamily = AppFont)
     val type = Typography(

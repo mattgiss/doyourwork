@@ -7,11 +7,11 @@ import SwiftUI
 enum AppFont {
     static let family = "Schibsted Grotesk"
 
-    /// Registers the bundled faces. Called once at launch; the Info.plist is generated, so they
+    /// Registers the bundled faces, and Pacifico for the heading (the icon's lettering, also OFL). Called once at launch; the Info.plist is generated, so they
     /// aren't listed there.
     static func register() {
         let urls = Bundle.main.urls(forResourcesWithExtension: "ttf", subdirectory: nil) ?? []
-        CTFontManagerRegisterFontURLs(urls.filter { $0.lastPathComponent.hasPrefix("SchibstedGrotesk-") } as CFArray, .process, true, nil)
+        CTFontManagerRegisterFontURLs(urls.filter { $0.lastPathComponent.hasPrefix("SchibstedGrotesk-") || $0.lastPathComponent.hasPrefix("Pacifico-") } as CFArray, .process, true, nil)
     }
 
     /// The system's default (Large) point sizes and weights for each text style.

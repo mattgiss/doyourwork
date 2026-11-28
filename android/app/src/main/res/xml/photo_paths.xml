@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Where the camera app writes a selfie for the profile photo: the app's cache, deleted once read. -->
+<paths>
+    <cache-path name="selfies" path="selfies/" />
+</paths>

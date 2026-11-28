@@ -1,17 +1,20 @@
 import SwiftUI
 import DoYourWorkCore
 
-/// One player's day: pick a card, check it off, submit, then (optionally) a bonus round.
+/// Someone's profile, opened from their family tile: their day (pick a card, check it off, submit,
+/// then optionally a bonus round), with a way to dare them, and on your own, to change your look.
 struct PlayerView: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
-    @Environment(\.dismiss) private var dismiss
     let player: Player
-    /// False when this is the right-hand pane beside the home list: there's nothing to go back to.
-    var showsBack = true
+    /// Back to the family. Nil where there's nothing to go back to.
+    var onBack: (() -> Void)?
+    /// Dare this person. Nil when you can't (an unlinked phone, or your own profile).
+    var onDare: (() -> Void)?
+    /// Change this person's photo and border, in settings. Nil on someone else's profile.
+    var onEditLook: (() -> Void)?
     @State private var bonusPicking = false
     @State private var editingDisplayName = false
-    @State private var choosingCharacter = false
     @State private var displayNameDraft = ""
 
     var body: some View {
@@ -24,40 +27,56 @@ struct PlayerView: View {
         let others = store.takenByOthers(player.id)
         let taken = Engine.standingToday(statusToday).union((card?.choreIds ?? []).filter { statusToday[$0] == nil }).union(others.keys)
         VStack(spacing: 0) {
-            // The screen's first band: who this is, their version and streak, in white on red,
-            // running up under the status bar.
-            VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                // Leaving the bonus picker always needs a way back, even with no screen behind this one.
-                if showsBack || bonusPicking {
-                    Button("Back") { fb.tap(); if bonusPicking { bonusPicking = false } else { dismiss() } }
-                        .font(.app(.callout)).fontWeight(.bold).frame(minWidth: 44, minHeight: 44, alignment: .leading).padding(.trailing, 8)
-                }
-                // Their character; tapping it is how they change it.
-                if let character = store.characters[player.id] {
-                    Button { fb.tap(); choosingCharacter = true } label: { CharacterIcon(character: character, size: 36) }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Your character: \(character.name)").accessibilityHint("Changes your character")
-                        .accessibilityIdentifier("character")
-                }
-                Text(bonusPicking ? "\(store.shownName(player)) · bonus" : store.shownName(player)).font(.app(.title3)).fontWeight(.black).lineLimit(1).minimumScaleFactor(0.6)
-                Spacer(minLength: 8)
-                // Their own nickname, their own call: no admin needed, and it can't change the
-                // username their points are kept under.
-                if !bonusPicking {
-                    Button("Rename") {
-                        fb.tap()
-                        displayNameDraft = player.displayName ?? ""
-                        editingDisplayName = true
+            // Who this is: their face, name and this week's points, then their version and streak,
+            // on a rounded card of the theme's main colour.
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    // Leaving the bonus picker always needs a way back.
+                    if bonusPicking || onBack != nil {
+                        Button { fb.tap(); if bonusPicking { bonusPicking = false } else { onBack?() } } label: {
+                            Image(systemName: "chevron.left").font(.system(size: 18, weight: .bold)).frame(width: 32, height: 44)
+                        }
+                        .accessibilityLabel("Back").accessibilityIdentifier("back")
                     }
-                    .font(.app(.callout)).fontWeight(.bold).frame(minHeight: 44)
+                    AvatarView(player: player, size: 64).frame(width: 52, height: 56).offset(y: -4)
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Their own nickname, their own call: no admin needed, and it can't change the
+                        // username their points are kept under.
+                        Button {
+                            fb.tap(); displayNameDraft = player.displayName ?? ""; editingDisplayName = true
+                        } label: {
+                            Text(bonusPicking ? "\(store.shownName(player)) · bonus" : store.shownName(player))
+                                .font(.app(.title3)).fontWeight(.black).lineLimit(1).minimumScaleFactor(0.6)
+                        }
+                        .buttonStyle(.plain).disabled(bonusPicking)
+                        .accessibilityHint("Changes your display name")
+                        Text("\(store.rank(player.id).version) · \(Phrase.count(store.weekPoints(player.id), "point")) this week").font(.app(.caption)).fontWeight(.semibold).opacity(0.85)
+                    }
+                    Spacer(minLength: 8)
+                    if !bonusPicking {
+                        if let onEditLook {
+                            Button { fb.tap(); onEditLook() } label: {
+                                Image(systemName: "camera.fill").font(.system(size: 15, weight: .bold)).frame(width: 40, height: 40)
+                                    .background(Palette.heat.ink.opacity(0.18), in: Circle())
+                            }
+                            .accessibilityLabel("Photo and border").accessibilityIdentifier("edit-look")
+                        }
+                        if let onDare {
+                            Button { fb.tap(); onDare() } label: {
+                                Label("Dare", systemImage: "bolt.fill").font(.app(.footnote)).fontWeight(.bold)
+                                    .padding(.horizontal, 12).frame(height: 40)
+                                    .background(Palette.heat.ink.opacity(0.18), in: Capsule())
+                            }
+                            .accessibilityLabel("Dare \(store.shownName(player))").accessibilityIdentifier("dare-person")
+                        }
+                    }
                 }
-            }
-            StatsHeader(rank: store.rank(player.id), streak: store.streak(player.id))
+                CompactStats(rank: store.rank(player.id), streak: store.streak(player.id))
             }
             .foregroundStyle(Palette.heat.ink).tint(Palette.heat.ink)
-            .padding(.horizontal, 16).padding(.bottom, 12)
-            .background(Palette.heat.stops[0].ignoresSafeArea(edges: [.top, .horizontal]))
+            .padding(.horizontal, 14).padding(.vertical, 8)
+            .background(Palette.heat.stops[0], in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .padding(.horizontal, 16).padding(.bottom, 4)
 
             if let card {
                 if bonusPicking {
@@ -76,12 +95,7 @@ struct PlayerView: View {
                 }
             }
         }
-        .background(Color.appBackground)
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $choosingCharacter) {
-            // Everyone gets their own: the other players' characters are shown as taken.
-            CharacterPicker(current: store.characters[player.id], takenBy: charactersTaken) { store.setCharacter(player.id, $0.id) }
-        }
         .alert("Display name", isPresented: $editingDisplayName) {
             TextField("Anything you like", text: $displayNameDraft)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -91,18 +105,6 @@ struct PlayerView: View {
         } message: {
             Text("Shown in place of your username, \(player.name). Your chores and points stay exactly as they are. Up to \(DisplayName.maxLength) characters.")
         }
-    }
-}
-
-private extension PlayerView {
-    /// The other players' characters, each with whose it is.
-    var charactersTaken: [String: String] {
-        let characters = store.characters
-        var out: [String: String] = [:]
-        for other in store.players where other.id != player.id {
-            if let c = characters[other.id] { out[c.id] = store.shownName(other) }
-        }
-        return out
     }
 }
 
@@ -129,15 +131,18 @@ private struct PickerView: View {
                     ForEach(notes, id: \.self) { note in
                         Text(note).font(.app(.footnote)).foregroundStyle(Theme.warn).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20).padding(.bottom, 10)
                     }
+                    LazyVGrid(columns: ChoreTile.columns, spacing: 10) {
                     ForEach(Array(pool.enumerated()), id: \.element.id) { i, c in
                         let isPicked = picked.contains(c.id)
-                        ChoreRow(name: c.name, minutes: c.currentMinutes, escalLevel: c.escalLevel, checked: isPicked,
+                        ChoreTile(name: c.name, minutes: c.currentMinutes, escalLevel: c.escalLevel, checked: isPicked,
                                  index: i, count: pool.count, picking: true) {
                             if isPicked { fb.tick(false); picked.removeAll { $0 == c.id }; suggested.remove(c.id) }
                             else if c.currentMinutes <= remaining { fb.tick(true); picked.append(c.id); suggested.remove(c.id) }
                             else { fb.error() }
                         }
                     }
+                    }
+                    .padding(.horizontal, 16)
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
@@ -207,27 +212,36 @@ private struct CardRunView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     SectionLabel("Today's card · \(Phrase.count(card.minutes.reduce(0, +), "minute"))")
+                    LazyVGrid(columns: ChoreTile.columns, spacing: 10) {
                     ForEach(Array(card.choreIds.enumerated()), id: \.element) { i, id in
-                        ChoreRow(name: store.choreName(id), minutes: card.minutes[i],
+                        ChoreTile(name: store.choreName(id), minutes: card.minutes[i],
                                  escalLevel: i < card.escal.count ? card.escal[i] : 0, checked: card.checked[i],
-                                 status: card.submitted ? (statusByChore[id] ?? Status.pending) : (lost.contains(id) ? ChoreRow.taken : nil),
+                                 status: card.submitted ? (statusByChore[id] ?? Status.pending) : (lost.contains(id) ? ChoreTile.taken : nil),
                                  index: i, count: rows) {
                             fb.tick(!card.checked[i]); store.toggle(player, card, i)
                         }
                     }
+                    }
+                    .padding(.horizontal, 16)
                     if !bonusLogs.isEmpty {
                         SectionLabel("Bonus round")
+                        LazyVGrid(columns: ChoreTile.columns, spacing: 10) {
                         ForEach(Array(bonusLogs.enumerated()), id: \.element.id) { i, l in
-                            ChoreRow(name: l.choreName, minutes: Engine.choreMinutes(l, pool: store.poolById), checked: true, status: statusByChore[l.choreId],
+                            ChoreTile(name: l.choreName, minutes: Engine.choreMinutes(l, pool: store.poolById), checked: true, status: statusByChore[l.choreId],
                                      index: card.choreIds.count + i, count: rows)
                         }
+                        }
+                        .padding(.horizontal, 16)
                     }
                     // Kept off a card that's still being checked off, where it would only be in the way.
                     if card.submitted && !rejectedExtras.isEmpty {
                         SectionLabel("Turned down today")
+                        LazyVGrid(columns: ChoreTile.columns, spacing: 10) {
                         ForEach(rejectedExtras) { l in
-                            ChoreRow(name: l.choreName, minutes: Engine.choreMinutes(l, pool: store.poolById), checked: true, status: Status.rejected)
+                            ChoreTile(name: l.choreName, minutes: Engine.choreMinutes(l, pool: store.poolById), checked: true, status: Status.rejected)
                         }
+                        }
+                        .padding(.horizontal, 16)
                     }
                 }
             }
@@ -291,5 +305,31 @@ private struct CardRunView: View {
         .fullScreenCover(isPresented: $snakeOpen, onDismiss: { store.puzzleTimeShown() }) {
             SnakeView(player: player).environmentObject(store).environmentObject(fb).font(.app(.body)).tint(Theme.accent)
         }
+    }
+}
+
+/// The xp bar with the streak and what's left to the next version, small enough that the chores
+/// below get most of the screen.
+private struct CompactStats: View {
+    let rank: Rank
+    let streak: Int
+    var body: some View {
+        VStack(spacing: 4) {
+            GeometryReader { g in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Palette.heat.ink.opacity(0.25))
+                    Capsule().fill(Palette.heat.ink).frame(width: g.size.width * CGFloat(rank.pct) / 100)
+                }
+            }
+            .frame(height: 5)
+            .animation(.easeOut(duration: 0.7), value: rank.pct)
+            HStack {
+                Text(streak == 0 ? "No streak yet" : "\(streak)-day streak · \(String(format: "%.1f", Engine.momentumMult(streak)))x points")
+                Spacer()
+                Text("\(rank.into) of \(rank.need) xp to \(rank.nextVersion)")
+            }
+            .font(.app(.caption2)).fontWeight(.semibold).opacity(0.85)
+        }
+        .foregroundStyle(Palette.heat.ink)
     }
 }

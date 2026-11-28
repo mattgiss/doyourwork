@@ -12,19 +12,22 @@
 		0B78D5F404DA0D64A2BA8BA5 /* SchibstedGrotesk-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E4CF4D74266BBBC27EB622EB /* SchibstedGrotesk-SemiBold.ttf */; };
 		0FCC5E31AEC6EABE1ABB88FC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5C1FAEB70CF3B4B1AD38D45A /* Assets.xcassets */; };
 		1C198951B4BC8DB269099287 /* PhonesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45DF5623CF03AEA7FF84834 /* PhonesView.swift */; };
-		218448F081E081987BC3971F /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB09090B633FF8178281FBC5 /* HomeView.swift */; };
 		2190B68AA63C2F7E7FF06166 /* puzzles.json in Resources */ = {isa = PBXBuildFile; fileRef = 60D5ED9EE15A124ED2D16F0E /* puzzles.json */; };
 		251F071347BAEF15C045AF5C /* chores.json in Resources */ = {isa = PBXBuildFile; fileRef = AC4C1ACF8572BB75ED5E25EB /* chores.json */; };
 		2612B2AD3C02ED34C7366BAB /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD036D80EA3B407899A56911 /* Typography.swift */; };
+		2DC2ADCA5B20BA9ED3E5D65D /* Pacifico-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 88C93A08CAA412560F80F271 /* Pacifico-OFL.txt */; };
 		3B234BA4F54298E867D0562C /* SchibstedGrotesk-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 576D2D51606DF6E4AD9A179D /* SchibstedGrotesk-Regular.ttf */; };
 		3D0432BB2B718DFFE7C707A7 /* DOYOURWORKApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CFCBF2F28B3A9C530916C9A /* DOYOURWORKApp.swift */; };
+		3D981126D5EF5DABA313B1E6 /* Pacifico-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 88C93A08CAA412560F80F271 /* Pacifico-OFL.txt */; };
 		42532696AC9039DE147B3F26 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC0E4B1B46E60BD493721DE3 /* SwiftUI.framework */; };
+		4D8F0CF4CFCEC2BF12C33CC1 /* Avatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 860A6D4322607771447CCB82 /* Avatar.swift */; };
 		4DBEEDE35BA1DB409D7FBF92 /* SchibstedGrotesk-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3CC7C494A85F020D377B273C /* SchibstedGrotesk-Black.ttf */; };
 		506762AA616744E17FB81B9D /* RelayLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3DE5415F0B60A98B70991E /* RelayLink.swift */; };
-		5699EC820FC7CFC16A6366A1 /* TodayOverview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E0C2E2B21F077C753458BF /* TodayOverview.swift */; };
+		5931B65DEFCDE1107F67AE1B /* ChoresSettingsPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA514FF64344DC9108F7C3EF /* ChoresSettingsPages.swift */; };
 		6194C01F5855631173CE0556 /* PuzzleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4911531450715E4EEFA432 /* PuzzleView.swift */; };
 		61F755552C81222085070A90 /* Timeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = F61B7319E396FEC1B9D9ED4E /* Timeline.swift */; };
 		629DBEC7B3EED97B029BAFAF /* SnakeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02F5F6ED2C77756544C085FC /* SnakeView.swift */; };
+		68D0358F63A06A8FDA495C1F /* Pages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B22526A8D5C183F406C8911 /* Pages.swift */; };
 		6B4A4E5A3E0A4F81ED025D0C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26C3AC6CCAAF2BF2C21DE1C8 /* RootView.swift */; };
 		708C3F3DBF9864A4E3F1C8AA /* SchibstedGrotesk-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1067664B19CF7592EBDBCE00 /* SchibstedGrotesk-Bold.ttf */; };
 		742AC0397E9D5ED58B2DCC89 /* SchibstedGrotesk-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 576D2D51606DF6E4AD9A179D /* SchibstedGrotesk-Regular.ttf */; };
@@ -50,6 +53,8 @@
 		DD0C9FB369C08708C2FB50F3 /* DoYourWorkCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6FB99F8835992D8852FA20AA /* DoYourWorkCore */; };
 		EDD35E9A1658DB79D2B62CBD /* AdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C0197089A22521DE3E4765 /* AdminView.swift */; };
 		F6F599531D896780DF92BCF2 /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F30322FB74ED786B905F610 /* SetupView.swift */; };
+		F743D96178AADC37364AF965 /* Pacifico-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 14FFB5BB0E595456A1D04EFE /* Pacifico-Regular.ttf */; };
+		F98472D78653EC6426F38293 /* Pacifico-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 14FFB5BB0E595456A1D04EFE /* Pacifico-Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,11 +91,11 @@
 /* Begin PBXFileReference section */
 		02F5F6ED2C77756544C085FC /* SnakeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnakeView.swift; sourceTree = "<group>"; };
 		1067664B19CF7592EBDBCE00 /* SchibstedGrotesk-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Bold.ttf"; sourceTree = "<group>"; };
+		14FFB5BB0E595456A1D04EFE /* Pacifico-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Pacifico-Regular.ttf"; sourceTree = "<group>"; };
 		19B83183CAACAA7CC6378583 /* FamilySync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FamilySync.swift; sourceTree = "<group>"; };
 		1C242792965CB5AA1C037E6A /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
 		1E592160EA9ABDFEE691B835 /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
 		1F30322FB74ED786B905F610 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
-		22E0C2E2B21F077C753458BF /* TodayOverview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayOverview.swift; sourceTree = "<group>"; };
 		2366A5448282A130BC28641B /* WidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBridge.swift; sourceTree = "<group>"; };
 		26C3AC6CCAAF2BF2C21DE1C8 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		3CC7C494A85F020D377B273C /* SchibstedGrotesk-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SchibstedGrotesk-Black.ttf"; sourceTree = "<group>"; };
@@ -106,15 +111,18 @@
 		60D5ED9EE15A124ED2D16F0E /* puzzles.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = puzzles.json; path = ../native/puzzles.json; sourceTree = "<group>"; };
 		67D43AB325B26E414C5FAAD0 /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		77501BA6709DC4B25326FDFA /* DaresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaresView.swift; sourceTree = "<group>"; };
+		7B22526A8D5C183F406C8911 /* Pages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pages.swift; sourceTree = "<group>"; };
 		825FF93ECAB7A0BA80D7F029 /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
+		860A6D4322607771447CCB82 /* Avatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Avatar.swift; sourceTree = "<group>"; };
+		88C93A08CAA412560F80F271 /* Pacifico-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Pacifico-OFL.txt"; sourceTree = "<group>"; };
 		8F83F5B179389A89CDA0C264 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 		9CFCBF2F28B3A9C530916C9A /* DOYOURWORKApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOYOURWORKApp.swift; sourceTree = "<group>"; };
 		9F8589579DFE105C19717039 /* DOYOURWORKWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = DOYOURWORKWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A62FF33E604DC22EF32D91A4 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
-		AB09090B633FF8178281FBC5 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		AB9BA1F8D6F82BE992EE1E0A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		AC4C1ACF8572BB75ED5E25EB /* chores.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = chores.json; path = ../native/chores.json; sourceTree = "<group>"; };
 		B858C9C08F6A99492AA046E8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		BA514FF64344DC9108F7C3EF /* ChoresSettingsPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoresSettingsPages.swift; sourceTree = "<group>"; };
 		BC0E4B1B46E60BD493721DE3 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		BD036D80EA3B407899A56911 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		C832C152D2EF971BFB0EC9CB /* DOYOURWORKUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DOYOURWORKUITests.swift; sourceTree = "<group>"; };
@@ -154,6 +162,8 @@
 		07568B3FB55F19E82EA7F79E /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
+				88C93A08CAA412560F80F271 /* Pacifico-OFL.txt */,
+				14FFB5BB0E595456A1D04EFE /* Pacifico-Regular.ttf */,
 				3CC7C494A85F020D377B273C /* SchibstedGrotesk-Black.ttf */,
 				1067664B19CF7592EBDBCE00 /* SchibstedGrotesk-Bold.ttf */,
 				576D2D51606DF6E4AD9A179D /* SchibstedGrotesk-Regular.ttf */,
@@ -247,15 +257,17 @@
 				F1C0197089A22521DE3E4765 /* AdminView.swift */,
 				A62FF33E604DC22EF32D91A4 /* AppStore.swift */,
 				5C1FAEB70CF3B4B1AD38D45A /* Assets.xcassets */,
+				860A6D4322607771447CCB82 /* Avatar.swift */,
 				F9A244D6E18A3903626DC5D0 /* Backup+Store.swift */,
 				825FF93ECAB7A0BA80D7F029 /* BackupView.swift */,
 				4494676B524BCB5B46480EA5 /* ChoreIntakeView.swift */,
+				BA514FF64344DC9108F7C3EF /* ChoresSettingsPages.swift */,
 				4E54446182258B3F08C02919 /* Components.swift */,
 				5AF4E6189F26C35ABA35F1A5 /* DOYOURWORK.entitlements */,
 				9CFCBF2F28B3A9C530916C9A /* DOYOURWORKApp.swift */,
 				67D43AB325B26E414C5FAAD0 /* Feedback.swift */,
-				AB09090B633FF8178281FBC5 /* HomeView.swift */,
 				1C242792965CB5AA1C037E6A /* Notifications.swift */,
+				7B22526A8D5C183F406C8911 /* Pages.swift */,
 				1E592160EA9ABDFEE691B835 /* Palette.swift */,
 				8F83F5B179389A89CDA0C264 /* PlayerView.swift */,
 				B858C9C08F6A99492AA046E8 /* PrivacyInfo.xcprivacy */,
@@ -263,7 +275,6 @@
 				26C3AC6CCAAF2BF2C21DE1C8 /* RootView.swift */,
 				1F30322FB74ED786B905F610 /* SetupView.swift */,
 				02F5F6ED2C77756544C085FC /* SnakeView.swift */,
-				22E0C2E2B21F077C753458BF /* TodayOverview.swift */,
 				BD036D80EA3B407899A56911 /* Typography.swift */,
 				2366A5448282A130BC28641B /* WidgetBridge.swift */,
 				09F41292B85792A75F007B56 /* Family */,
@@ -388,6 +399,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2DC2ADCA5B20BA9ED3E5D65D /* Pacifico-OFL.txt in Resources */,
+				F743D96178AADC37364AF965 /* Pacifico-Regular.ttf in Resources */,
 				873138EAF6703B1F0EA59220 /* SchibstedGrotesk-Black.ttf in Resources */,
 				708C3F3DBF9864A4E3F1C8AA /* SchibstedGrotesk-Bold.ttf in Resources */,
 				3B234BA4F54298E867D0562C /* SchibstedGrotesk-Regular.ttf in Resources */,
@@ -400,6 +413,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				0FCC5E31AEC6EABE1ABB88FC /* Assets.xcassets in Resources */,
+				3D981126D5EF5DABA313B1E6 /* Pacifico-OFL.txt in Resources */,
+				F98472D78653EC6426F38293 /* Pacifico-Regular.ttf in Resources */,
 				97E71EC3F586D5E90E10AF62 /* PrivacyInfo.xcprivacy in Resources */,
 				4DBEEDE35BA1DB409D7FBF92 /* SchibstedGrotesk-Black.ttf in Resources */,
 				7E2641EFB6536D1FAE88B3A1 /* SchibstedGrotesk-Bold.ttf in Resources */,
@@ -427,16 +442,18 @@
 			files = (
 				EDD35E9A1658DB79D2B62CBD /* AdminView.swift in Sources */,
 				80BB11A8C8870C329D96700B /* AppStore.swift in Sources */,
+				4D8F0CF4CFCEC2BF12C33CC1 /* Avatar.swift in Sources */,
 				039FE14C180EAC4DD25A5F89 /* Backup+Store.swift in Sources */,
 				8AB439935E984B7D938396FE /* BackupView.swift in Sources */,
 				84A0FF8131A1848F54330E12 /* ChoreIntakeView.swift in Sources */,
+				5931B65DEFCDE1107F67AE1B /* ChoresSettingsPages.swift in Sources */,
 				CAD2BE793357EBB772FE20D1 /* Components.swift in Sources */,
 				3D0432BB2B718DFFE7C707A7 /* DOYOURWORKApp.swift in Sources */,
 				7BA9080FB45D7B217AF449DD /* DaresView.swift in Sources */,
 				A4F57CE03CC3585CA73DCBFB /* FamilySync.swift in Sources */,
 				8F293C4A06CEF9E9D3EE1777 /* Feedback.swift in Sources */,
-				218448F081E081987BC3971F /* HomeView.swift in Sources */,
 				979EE4F296971A1C0BC72506 /* Notifications.swift in Sources */,
+				68D0358F63A06A8FDA495C1F /* Pages.swift in Sources */,
 				08A11DD4DF5C067703E7410B /* Palette.swift in Sources */,
 				1C198951B4BC8DB269099287 /* PhonesView.swift in Sources */,
 				B55AC16FDEE1673B2E0B8010 /* PlayerView.swift in Sources */,
@@ -445,7 +462,6 @@
 				6B4A4E5A3E0A4F81ED025D0C /* RootView.swift in Sources */,
 				F6F599531D896780DF92BCF2 /* SetupView.swift in Sources */,
 				629DBEC7B3EED97B029BAFAF /* SnakeView.swift in Sources */,
-				5699EC820FC7CFC16A6366A1 /* TodayOverview.swift in Sources */,
 				2612B2AD3C02ED34C7366BAB /* Typography.swift in Sources */,
 				A72809AE53EFFED0E015AC38 /* WidgetBridge.swift in Sources */,
 			);
@@ -574,7 +590,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the code another phone shows to join its family.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Take a selfie for your profile, or scan the code another phone shows to join its family.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -605,7 +621,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = DOYOURWORK;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Scan the code another phone shows to join its family.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Take a selfie for your profile, or scan the code another phone shows to join its family.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Open the admin area to approve chores.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

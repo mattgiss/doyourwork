@@ -95,17 +95,18 @@ class StoreScreenshotsTest {
         launch(withFamily = false).use { shot("02-private-by-design") }
 
         launch(withFamily = true).use {
-            // 1. The scoreboard. On a tablet, a day waiting on an admin fills the other half.
-            if (wide) tap("dishwizard")
+            // 1. The family. On a tablet, a day waiting on an admin fills the other half.
+            if (wide) tapTile("dishwizard")
             shot("01-scoreboard")
 
-            // 3. Picking today's chores, with a suggested card.
-            tap("broomrider")
+            // 3. Picking today's chores on their profile, with a suggested card.
+            tapTile("broomrider")
             if (!wide) {
-                // Not a store picture, but while we're here: a player swaps their character and swaps it back.
-                // Someone else's is offered faded and can't be taken.
+                // Not a store picture, but while we're here: from their profile's camera button, a player
+                // swaps their character in settings and swaps it back. Someone else's is offered faded and can't be taken.
+                rule.onAllNodes(hasClickAction() and hasContentDescription("Photo and border")).onFirst().performClick(); rule.waitForIdle()
                 fun mine(name: String) = rule.onAllNodes(hasContentDescription("Your character: $name")).fetchSemanticsNodes().isNotEmpty()
-                fun pickerOpen() { rule.onAllNodes(hasContentDescription("Your character", substring = true)).onFirst().performClick(); rule.waitForIdle() }
+                fun pickerOpen() = tap("Change character")
                 check(mine("Cat")) { "broomrider starts with the cat they picked" }
                 pickerOpen()
                 captureScreenRoboImage("build/pictures/pick-a-character.png")
@@ -115,6 +116,8 @@ class StoreScreenshotsTest {
                 pickerOpen()
                 rule.onAllNodes(hasContentDescription("Cat") and hasClickAction()).onFirst().performClick(); rule.waitForIdle()
                 check(mine("Cat")) { "and the cat can be picked back" }
+                page("Family")
+                tapTile("broomrider")
             }
             tap("Suggest a 25-minute card")
             shot("03-pick-chores")
@@ -125,7 +128,8 @@ class StoreScreenshotsTest {
             shot("04-todays-card")
 
             // 6. The admin area, with today's chores waiting for a yes or no.
-            if (!wide) tap("Back")
+            back()
+            page("Settings")
             tap("Admin")
             rule.onAllNodes(hasSetTextAction()).onFirst().performTextInput("2468")
             tap("Unlock")
@@ -150,6 +154,24 @@ class StoreScreenshotsTest {
     }
 
     private val checkbox = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
+
+    /** The back chevron on a profile. */
+    private fun back() {
+        rule.onAllNodes(hasClickAction() and hasContentDescription("Back")).onFirst().performClick()
+        rule.waitForIdle()
+    }
+
+    /** A family tile, which shows the person's name. */
+    private fun tapTile(name: String) {
+        rule.onAllNodes(hasClickAction() and hasText(name)).onFirst().performClick()
+        rule.waitForIdle()
+    }
+
+    /** One of the pages in the tab bar, by its name. */
+    private fun page(name: String) {
+        rule.onAllNodes(hasClickAction() and hasText(name)).onFirst().performClick()
+        rule.waitForIdle()
+    }
 
     private fun tap(text: String) {
         rule.onAllNodes(hasClickAction() and hasText(text, substring = true)).onFirst().performClick()

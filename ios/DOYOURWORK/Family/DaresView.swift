@@ -2,13 +2,15 @@ import SwiftUI
 import DoYourWorkCore
 
 /// Make today's secret dares: guess which chores someone else will do. Optional, up to three a day.
-/// Only your own dares show here; everyone's are revealed on the home screen after midnight.
+/// Only your own dares show here; everyone's are revealed in the feed after midnight.
 struct DaresView: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var fb: Feedback
     @Environment(\.dismiss) private var dismiss
     /// Set when this is shown in a pane, not presented over the app: closes the pane.
     var onBack: (() -> Void)? = nil
+    /// Opened from someone's profile: dare them first.
+    var initialTarget: String? = nil
     @State private var targetId: String?
     @State private var note: String?
 
@@ -61,15 +63,8 @@ struct DaresView: View {
                         }
                         // The same list the target sees, most overdue first: the likeliest chores are on top.
                         let pool = store.pickable(target.id)
-                        ForEach(Array(pool.enumerated()), id: \.element.id) { i, c in
-                            let on = mine.contains { $0.target == target.id && $0.choreId == c.id }
-                            ChoreRow(name: c.name, minutes: c.currentMinutes, escalLevel: c.escalLevel, checked: on,
-                                     index: i, count: pool.count, picking: true) {
-                                let why = store.toggleDare(target, c.id)
-                                note = why
-                                if why != nil { fb.error() } else if on { fb.tick(false) } else { fb.dare() }
-                            }
-                            .padding(.horizontal, -20)
+                        LazyVGrid(columns: ChoreTile.columns, spacing: 10) {
+                            ForEach(pool) { c in dareTile(c, target: target, mine: mine) }
                         }
                     } else {
                         Text("Once there's someone else playing, you can dare them.").foregroundStyle(.secondary).padding(.vertical, 24)
@@ -80,5 +75,15 @@ struct DaresView: View {
         }
         .background(Color.appBackground)
         .environment(\.palette, .plum)
+        .onAppear { if targetId == nil { targetId = initialTarget } }
+    }
+
+    private func dareTile(_ c: EnrichedChore, target: Player, mine: [Dare]) -> some View {
+        let on = mine.contains { $0.target == target.id && $0.choreId == c.id }
+        return ChoreTile(name: c.name, minutes: c.currentMinutes, escalLevel: c.escalLevel, checked: on, picking: true) {
+            let why = store.toggleDare(target, c.id)
+            note = why
+            if why != nil { fb.error() } else if on { fb.tick(false) } else { fb.dare() }
+        }
     }
 }

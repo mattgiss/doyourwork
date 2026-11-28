@@ -12,9 +12,16 @@ public struct Player: Codable, Identifiable, Hashable {
     public var plays: Bool
     /// The id of the character they picked for their scoreboard tile; nil until they pick (see `Characters.assign`).
     public var character: String?
+    /// Their profile photo: a small square JPEG as base64 (see `ProfilePhoto`); nil for none, when
+    /// their character stands in.
+    public var photo: String?
+    /// The id of the border drawn around their photo (see `Borders`); nil for none.
+    public var border: String?
 
-    public init(id: String, name: String, displayName: String? = nil, isAdmin: Bool = false, plays: Bool = true, character: String? = nil) {
+    public init(id: String, name: String, displayName: String? = nil, isAdmin: Bool = false, plays: Bool = true, character: String? = nil,
+                photo: String? = nil, border: String? = nil) {
         self.id = id; self.name = name; self.displayName = displayName; self.isAdmin = isAdmin; self.plays = plays; self.character = character
+        self.photo = photo; self.border = border
     }
 
     // Older saves hold only an id and a name.
@@ -26,6 +33,8 @@ public struct Player: Codable, Identifiable, Hashable {
         isAdmin = try c.decodeIfPresent(Bool.self, forKey: .isAdmin) ?? false
         plays = try c.decodeIfPresent(Bool.self, forKey: .plays) ?? true
         character = try c.decodeIfPresent(String.self, forKey: .character)
+        photo = try c.decodeIfPresent(String.self, forKey: .photo)
+        border = try c.decodeIfPresent(String.self, forKey: .border)
     }
 
     /// What to show for this person: the display name if it holds anything visible, else the username.

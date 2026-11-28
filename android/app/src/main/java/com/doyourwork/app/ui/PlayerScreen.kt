@@ -6,7 +6,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
+import com.doyourwork.app.R
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -75,32 +87,9 @@ fun TwoZone(hinge: Hinge?, top: @Composable () -> Unit, bottom: @Composable () -
     }
 }
 
-/**
- * The screen's first band: who this is (and, on their day, their version and streak) in white on
- * red, running up under the status bar.
- */
-@Composable
-private fun TopBar(title: String, onBack: (() -> Unit)?, onName: (() -> Unit)? = null, character: PlayerCharacter? = null,
-                   onCharacter: (() -> Unit)? = null, stats: (@Composable () -> Unit)? = null) {
-    val ink = Palette.HEAT.ink
-    Column(Modifier.fillMaxWidth().background(Palette.HEAT.stops[0]).statusBarsPadding().padding(start = 4.dp + LocalColumnInset.current, end = 4.dp + LocalColumnInset.current, bottom = 12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (onBack != null) TextButton(onClick = onBack) { Text("Back", color = ink, fontWeight = FontWeight.Bold) }
-            // Their character; tapping it is how they change it.
-            if (character != null) CharacterIcon(character, 36.dp, Modifier.padding(start = 12.dp)
-                .then(if (onCharacter != null) Modifier.clickable(onClickLabel = "change your character", onClick = onCharacter) else Modifier)
-                .semantics { contentDescription = "Your character: ${character.name}" })
-            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp))
-            if (onName != null) TextButton(onClick = onName) { Text("Rename", color = ink, fontWeight = FontWeight.Bold) }
-        }
-        if (stats != null) Box(Modifier.padding(horizontal = 12.dp)) { stats() }
-    }
-}
-
 /** A player's own nickname: no admin needed, and their username (what points are kept under) never changes. */
 @Composable
-private fun DisplayNameDialog(player: Player, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+fun DisplayNameDialog(player: Player, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var draft by remember { mutableStateOf(player.displayName ?: "") }
     AlertDialog(
         onDismissRequest = onDismiss, title = { Text("Display name") },
@@ -116,7 +105,78 @@ private fun DisplayNameDialog(player: Player, onDismiss: () -> Unit, onSave: (St
     )
 }
 
-/** One player's day: pick a card, check it off, submit, then (optionally) a bonus round. */
+/**
+ * Who this is, on a rounded card of the theme's main colour at the top of their profile: a back
+ * chevron, their avatar with its border, their name (tap to rename) with their version and this
+ * week's points, then their xp bar with the streak and what's left to the next version. On the
+ * right, "Photo and border" and "Dare" when they apply. As on iOS (`PlayerView`).
+ */
+@Composable
+fun ProfileHeader(
+    vm: AppViewModel,
+    player: Player,
+    character: PlayerCharacter?,
+    logs: List<ChoreLog>,
+    bonus: Boolean,
+    onBack: (() -> Unit)?,
+    onName: () -> Unit,
+    onDare: (() -> Unit)?,
+    onEditLook: (() -> Unit)?,
+) {
+    val shared by vm.store.state.collectAsState()
+    val now = vm.now()
+    val rank = Engine.rank(vm.totalXp(player.id, logs, shared))
+    val streak = Engine.streak(player.id, logs, now, vm.zone)
+    val week = Engine.weekPoints(player.id, logs, vm.dares(shared), vm.today(), vm.zone)
+    val progress by animateFloatAsState(rank.pct / 100f, tween(700), label = "xp")
+    val fb = LocalFeedback.current
+    val heat = Palette.HEAT
+    val ink = heat.ink
+    Column(Modifier.padding(horizontal = Gap).padding(bottom = 4.dp).fillMaxWidth().clip(CardShape).background(heat.stops[0])
+        .padding(horizontal = 12.dp, vertical = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (onBack != null) Box(Modifier.size(36.dp, 44.dp).clip(CircleShape).clickable(onClickLabel = "Back") { fb.tap(); onBack() }
+                .semantics { contentDescription = "Back" }, contentAlignment = Alignment.Center) {
+                Icon(painterResource(R.drawable.ic_back), contentDescription = null, tint = ink, modifier = Modifier.size(20.dp))
+            }
+            BorderedAvatar(player, character, Modifier.width(56.dp))
+            Column(Modifier.weight(1f).padding(start = 8.dp)) {
+                Text(if (bonus) "${player.shownName} · bonus" else player.shownName, style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black, color = ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.clickable(enabled = !bonus, onClickLabel = "change your display name") { fb.tap(); onName() })
+                Text("${rank.version} · ${Phrase.count(week, "point")} this week", style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold, color = ink.copy(alpha = 0.85f), maxLines = 1)
+            }
+            if (!bonus) {
+                if (onEditLook != null) Box(Modifier.padding(start = 6.dp).size(40.dp).clip(CircleShape).background(ink.copy(alpha = 0.18f))
+                    .clickable(onClickLabel = "Photo and border") { fb.tap(); onEditLook() }.semantics { contentDescription = "Photo and border" },
+                    contentAlignment = Alignment.Center) {
+                    Icon(painterResource(R.drawable.ic_camera), contentDescription = null, tint = ink, modifier = Modifier.size(19.dp))
+                }
+                if (onDare != null) Row(Modifier.padding(start = 6.dp).height(40.dp).clip(CircleShape).background(ink.copy(alpha = 0.18f))
+                    .clickable(onClickLabel = "Dare ${player.shownName}") { fb.tap(); onDare() }.padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Icon(painterResource(R.drawable.ic_bolt), contentDescription = null, tint = ink, modifier = Modifier.size(15.dp))
+                    Text("Dare", color = ink, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(start = 4.dp))
+                }
+            }
+        }
+        Box(Modifier.fillMaxWidth().padding(top = 8.dp).height(5.dp).clip(CircleShape).background(ink.copy(alpha = 0.25f))) {
+            Box(Modifier.fillMaxWidth(progress).height(5.dp).clip(CircleShape).background(ink))
+        }
+        Row(Modifier.padding(top = 4.dp)) {
+            Text(if (streak == 0) "No streak yet" else "$streak-day streak · ${"%.1f".format(Engine.momentumMult(streak))}x points",
+                style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = ink.copy(alpha = 0.85f), modifier = Modifier.weight(1f))
+            Text("${rank.into} of ${rank.need} xp to ${rank.nextVersion}", style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold, color = ink.copy(alpha = 0.85f))
+        }
+    }
+}
+
+/**
+ * Someone's profile, opened from their family tile: their day (pick a card, check it off, submit,
+ * then optionally a bonus round), with the chores as tiles two across, under [ProfileHeader].
+ */
 @Composable
 fun PlayerScreen(
     vm: AppViewModel,
@@ -124,7 +184,12 @@ fun PlayerScreen(
     logs: List<ChoreLog>,
     cards: Map<String, Card>,
     hinge: Hinge?,
+    /** Back to the family. */
     onBack: (() -> Unit)?,
+    /** Dare this person; null when you can't (an unlinked phone, or your own profile). */
+    onDare: (() -> Unit)? = null,
+    /** Their photo and border, in settings; null on someone else's profile. */
+    onEditLook: (() -> Unit)? = null,
     /** Opens the puzzle; offered once today's card is submitted. */
     onPuzzle: () -> Unit = {},
     /** Opens snake, the second game; offered alongside the puzzle. */
@@ -138,15 +203,8 @@ fun PlayerScreen(
     var naming by remember { mutableStateOf(false) }
     if (naming) DisplayNameDialog(player, onDismiss = { naming = false }) { vm.setDisplayName(player.id, it); naming = false }
     val fb = LocalFeedback.current
-    // Their character, and the picker for it. Everyone gets their own: the others' are shown as taken.
     val characters = remember(family) { vm.characters(family.players) }
     val character = characters[player.id]
-    var choosing by remember { mutableStateOf(false) }
-    if (choosing) CharacterPicker(
-        current = character,
-        takenBy = family.players.filter { it.id != player.id }.mapNotNull { o -> characters[o.id]?.let { it.id to o.shownName } }.toMap(),
-        onPick = { vm.setCharacter(player.id, it.id); choosing = false }, onDismiss = { choosing = false },
-    )
 
     val todays = vm.todaysLogs(player.id, logs)
     val statusToday = Engine.statusToday(todays)
@@ -156,14 +214,13 @@ fun PlayerScreen(
     // A rejected chore isn't — it can be done again.
     val taken = Engine.standingToday(statusToday) + card?.choreIds.orEmpty().filter { it !in statusToday } + others.keys
 
-    val shared by vm.store.state.collectAsState()
-    val rank = Engine.rank(vm.totalXp(player.id, logs, shared))
-    val streak = Engine.streak(player.id, logs, now, vm.zone)
-    val stats = @Composable { StatsHeader(rank, streak) }
-    Column(Modifier.fillMaxSize().background(Bg)) {
+    Column(Modifier.fillMaxSize()) {
+        // Leaving the bonus picker always needs a way back.
+        ProfileHeader(vm, player, character, logs, bonus = bonusPicking,
+            onBack = if (bonusPicking) ({ bonusPicking = false }) else onBack,
+            onName = { naming = true }, onDare = onDare, onEditLook = onEditLook)
         when {
             card == null -> {
-                TopBar(player.shownName, onBack, { naming = true }, character, { fb.tap(); choosing = true }, stats)
                 val notes = listOfNotNull(
                     "Today's earlier chores were turned down, so let's build a new card.".takeIf { vm.rejectedToday(player.id, logs) },
                     "Someone else already has ${if (others.size == 1) "one" else "${others.size}"} of today's chores.".takeIf { others.isNotEmpty() },
@@ -171,13 +228,11 @@ fun PlayerScreen(
                 Picker(player.id, pool.filter { it.id !in others }, bonus = false, hinge = hinge, notes = notes) { vm.lockIn(player, it); fb.lockIn() }
             }
             bonusPicking -> {
-                TopBar("${player.shownName} · bonus round", onBack = { bonusPicking = false }, character = character)
                 Picker(player.id, pool.filter { it.id !in taken }, bonus = true, hinge = hinge) {
                     vm.logBonus(player, it); fb.submit(); bonusPicking = false
                 }
             }
             else -> {
-                TopBar(player.shownName, onBack, { naming = true }, character, { fb.tap(); choosing = true }, stats)
                 CardRun(vm, player, card, logs, todays, others, hinge, bonusLeft = vm.store.pool.count { it.id !in taken },
                     onPuzzle = onPuzzle, onSnake = onSnake) { bonusPicking = true }
             }
@@ -210,42 +265,36 @@ private fun Picker(
     TwoZone(
         hinge,
         top = {
-            LazyColumn(Modifier.fillMaxSize()) {
-                item {
-                    Text(
-                        if (bonus) "Did a bit extra today? Pick what you did. Every chore still earns its points."
-                        else "Pick what you'd like to do today, then fill it up to ${Engine.DAILY_MINUTES} minutes.",
-                        color = Done, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current, vertical = 14.dp),
-                    )
-                }
-                items(notes) { note ->
-                    Text(note, color = Warn, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current).padding(bottom = 10.dp))
-                }
-                itemsIndexed(pool, key = { _, c -> c.id }) { i, c ->
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Gap)) {
+                Text(
+                    if (bonus) "Did a bit extra today? Pick what you did. Every chore still earns its points."
+                    else "Pick what you'd like to do today, then fill it up to ${Engine.DAILY_MINUTES} minutes.",
+                    color = Done, modifier = Modifier.padding(horizontal = 4.dp).padding(top = 14.dp, bottom = 10.dp),
+                )
+                for (note in notes) Text(note, color = Warn, style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 4.dp).padding(bottom = 10.dp))
+                TileGrid(pool, 2, gap = 8.dp) { c, m ->
                     val isPicked = c.id in picked
                     val fits = isPicked || c.currentMinutes <= remaining
-                    Box(Modifier.then(if (fits) Modifier else Modifier.padding(start = 0.dp))) {
-                        ChoreRow(
-                            name = c.name,
-                            minutes = c.currentMinutes, escalLevel = c.escalLevel, checked = isPicked,
-                            index = i, count = pool.size, picking = true,
-                            onToggle = {
-                                if (isPicked) { fb.tick(false); picked = picked - c.id; suggested = suggested - c.id }
-                                else if (fits) { fb.tick(true); picked = picked + c.id; suggested = suggested - c.id }
-                                else fb.error()
-                            },
-                        )
-                    }
+                    ChoreTile(
+                        name = c.name, minutes = c.currentMinutes, escalLevel = c.escalLevel, checked = isPicked, modifier = m,
+                        picking = true, faded = !fits,
+                        onToggle = {
+                            if (isPicked) { fb.tick(false); picked = picked - c.id; suggested = suggested - c.id }
+                            else if (fits) { fb.tick(true); picked = picked + c.id; suggested = suggested - c.id }
+                            else fb.error()
+                        },
+                    )
                 }
             }
         },
         bottom = {
-            Column(Modifier.fillMaxWidth()) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = Gap).padding(bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(if (bonus) Phrase.count(total, "minute") else "$total of ${Engine.DAILY_MINUTES} minutes", fontWeight = FontWeight.Black,
-                    style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current, vertical = 10.dp))
+                    style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp))
                 if (!bonus) {
                     MinutesBar(total, Engine.DAILY_MINUTES)
-                    QuietButton(
+                    SoftButton(
                         if (chosen.isEmpty()) "Suggest a ${Engine.DAILY_MINUTES}-minute card" else "Fill it up to ${Engine.DAILY_MINUTES} minutes",
                         onClick = {
                             fb.fill()
@@ -255,7 +304,7 @@ private fun Picker(
                         },
                     )
                 }
-                TermButton(
+                MainButton(
                     label = when {
                         ready && bonus -> "Log ${if (chosen.size == 1) "this chore" else "these ${chosen.size} chores"}"
                         ready -> "Lock in my card"
@@ -307,47 +356,44 @@ private fun CardRun(
     TwoZone(
         hinge,
         top = {
-            // One gradient down the whole day: the card, then the bonus round, then anything turned down.
-            val rows = card.choreIds.size + bonusLogs.size + if (card.submitted) rejectedExtras.size else 0
-            LazyColumn(Modifier.fillMaxSize()) {
-                item { SectionLabel("Today's card · ${Phrase.count(total, "minute")}") }
-                itemsIndexed(card.choreIds) { i, id ->
-                    ChoreRow(
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Gap)) {
+                SectionLabel("Today's card · ${Phrase.count(total, "minute")}", padded = false)
+                TileGrid(card.choreIds.indices.toList(), 2, gap = 8.dp) { i, m ->
+                    val id = card.choreIds[i]
+                    ChoreTile(
                         name = vm.choreName(id), minutes = card.minutes[i],
                         escalLevel = card.escal.getOrElse(i) { 0 },
-                        checked = card.checked[i],
+                        checked = card.checked[i], modifier = m,
                         status = if (card.submitted) statusByChore[id] ?: Status.PENDING else if (id in lost) TAKEN else null,
-                        index = i, count = rows,
                         onToggle = { fb.tick(!card.checked[i]); vm.toggle(player, card, i) },
                     )
                 }
                 if (bonusLogs.isNotEmpty()) {
-                    item { SectionLabel("Bonus round") }
-                    itemsIndexed(bonusLogs, key = { _, l -> l.id }) { i, l ->
-                        ChoreRow(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, status = statusByChore[l.choreId],
-                            index = card.choreIds.size + i, count = rows)
+                    SectionLabel("Bonus round", padded = false)
+                    TileGrid(bonusLogs, 2, gap = 8.dp) { l, m ->
+                        ChoreTile(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, modifier = m, status = statusByChore[l.choreId])
                     }
                 }
                 // Kept off a card that's still being checked off, where it would only be in the way.
                 if (card.submitted && rejectedExtras.isNotEmpty()) {
-                    item { SectionLabel("Turned down today") }
-                    items(rejectedExtras, key = { it.id }) { l ->
-                        ChoreRow(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, status = Status.REJECTED)
+                    SectionLabel("Turned down today", padded = false)
+                    TileGrid(rejectedExtras, 2, gap = 8.dp) { l, m ->
+                        ChoreTile(l.choreName, Engine.choreMinutes(l, vm.store.poolById), 0, checked = true, modifier = m, status = Status.REJECTED)
                     }
                 }
             }
         },
         bottom = {
-            Column(Modifier.fillMaxWidth()) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = Gap).padding(bottom = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (!card.submitted) {
                     if (lost.isNotEmpty()) Text("Someone else got to the ones marked taken first, so they won't be sent.",
-                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current).padding(bottom = 8.dp))
-                    Row(Modifier.padding(horizontal = 20.dp + LocalColumnInset.current), verticalAlignment = Alignment.CenterVertically) {
+                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 4.dp).padding(bottom = 8.dp))
+                    Row(Modifier.padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("The puzzle opens once you send your card.", style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.weight(1f))
                         Text("Change my picks", color = Ink, fontWeight = FontWeight.Bold,
                             modifier = Modifier.clickable { fb.tap(); vm.clearCard(player) }.padding(vertical = 14.dp, horizontal = 4.dp))
                     }
-                    TermButton(
+                    MainButton(
                         when {
                             allChecked -> "Send it off for approval"
                             keep.isEmpty() -> "Everything's been taken today. Change your picks"
@@ -367,24 +413,24 @@ private fun CardRun(
                         rejected == verdicts.size -> "None of today's chores were approved." to Bad
                         else -> "${verdicts.size - rejected} approved and $rejected turned down." to Done
                     }
-                    Text(line, color = lineColor, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current, vertical = 10.dp))
+                    Text(line, color = lineColor, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp))
                     if (rejected > 0) Text("You can redo the turned-down ones in a bonus round.",
-                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current).padding(bottom = 10.dp))
+                        style = MaterialTheme.typography.bodyMedium, color = Done, modifier = Modifier.padding(horizontal = 4.dp).padding(bottom = 10.dp))
                     val minutesLeft = com.doyourwork.app.engine.PuzzleTime.minutesLeft(vm.puzzleUsedMs(player.id))
                     if (minutesLeft > 0) {
                         val level = vm.puzzleLevel(player.id)
                         val best = vm.snakeBest(player.id)
                         // The time left gets its own line, so each button is just its game.
                         Text("${Phrase.count(minutesLeft, "minute")} of games left today", color = Done, fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current).padding(top = 8.dp, bottom = 4.dp))
-                        TermButton("Clear the grid · level $level") { fb.unlock(); onPuzzle() }
+                            modifier = Modifier.padding(horizontal = 4.dp).padding(top = 8.dp, bottom = 4.dp))
+                        MainButton("Clear the grid · level $level") { fb.unlock(); onPuzzle() }
                         // The second game, sharing the same 30 minutes.
-                        QuietButton(if (best > 0) "Eat the dots · best $best" else "Eat the dots") { fb.unlock(); onSnake() }
+                        SoftButton(if (best > 0) "Eat the dots · best $best" else "Eat the dots") { fb.unlock(); onSnake() }
                     } else {
                         Text("That's your 30 minutes of games for today. See you tomorrow!", color = Done,
-                            modifier = Modifier.padding(horizontal = 20.dp + LocalColumnInset.current, vertical = 18.dp))
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 18.dp))
                     }
-                    if (bonusLeft > 0) QuietButton("Do a bonus round") { fb.tap(); onBonus() }
+                    if (bonusLeft > 0) SoftButton("Do a bonus round") { fb.tap(); onBonus() }
                 }
             }
         },

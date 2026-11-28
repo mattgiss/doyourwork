@@ -13,9 +13,9 @@ struct DOYOURWORKApp: App {
         WindowGroup {
             RootView()
                 // A new theme redraws everything: colours are read from it as each screen draws.
-                .id(themes.current.id)
+                .id("\(themes.current.id)-\(themes.appearance.rawValue)")
                 .foregroundStyle(Color.appText)
-                .background(Color.appBackground.ignoresSafeArea())
+                .background(AppBackdrop())
                 .alert("DOYOURWORK", isPresented: Binding(get: { store.notice != nil }, set: { if !$0 { store.notice = nil } })) {
                     Button("OK", role: .cancel) { store.notice = nil }
                 } message: { Text(store.notice ?? "") }
@@ -23,8 +23,8 @@ struct DOYOURWORKApp: App {
                 .environmentObject(feedback)
                 .font(.app(.body))
                 .tint(Theme.accent)
-                // Dark only, like Clear: the colour is in the rows, not the background.
-                .preferredColorScheme(.dark)
+                // Dark, unless this phone chose the light appearance.
+                .preferredColorScheme(themes.isLight ? .light : .dark)
                 // The picker sits above the redraw, so it stays open while you try themes.
                 .sheet(isPresented: $themes.picking) { ThemePicker().font(.app(.body)) }
                 // The home and lock screen widgets read what the app last wrote (WidgetBridge).

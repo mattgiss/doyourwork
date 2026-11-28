@@ -16,6 +16,10 @@ data class Player(
     val plays: Boolean = true,
     /** The id of the character they picked for their scoreboard tile; null until they pick (see Characters.assign). */
     val character: String? = null,
+    /** Their profile photo: a small square JPEG as base64 (see ProfilePhoto); null for none, when their character stands in. */
+    val photo: String? = null,
+    /** The id of the border drawn around their photo (see Borders); null for none. */
+    val border: String? = null,
 ) {
     /** What to show for this person: the display name if it holds anything visible, else the username. */
     val shownName: String get() = displayName?.let { com.doyourwork.app.engine.DisplayName.clean(it) } ?: name

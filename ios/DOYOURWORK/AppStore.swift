@@ -456,6 +456,27 @@ final class AppStore: ObservableObject {
         familyChanged()
     }
 
+    // MARK: Photos and borders
+
+    /// A person's profile photo (base64 JPEG from `PhotoCache.profilePhoto`), or nil to take it off.
+    /// Their own call, like their character; on a linked phone it reaches the others, sealed.
+    func setPhoto(_ playerId: String, _ base64: String?) {
+        guard let i = members.firstIndex(where: { $0.id == playerId }) else { return }
+        members[i].photo = ProfilePhoto.clean(base64)
+        familyChanged()
+    }
+
+    /// Wear a border. Only ones they've earned (`Borders.isUnlocked`); "none" takes it off.
+    func setBorder(_ playerId: String, _ borderId: String) {
+        guard let border = Borders.named(borderId), Borders.isUnlocked(border, xp: totalXp(playerId)),
+              let i = members.firstIndex(where: { $0.id == playerId }) else { return }
+        members[i].border = border.layers.isEmpty ? nil : border.id
+        familyChanged()
+    }
+
+    /// Chores sent in and waiting for an admin, for the Admin row in settings.
+    var waitingCount: Int { logs.filter { $0.status == Status.pending }.count }
+
     /// What to show for a player: their display name, or their username if they haven't set one.
     func shownName(_ player: Player) -> String { player.shownName }
 

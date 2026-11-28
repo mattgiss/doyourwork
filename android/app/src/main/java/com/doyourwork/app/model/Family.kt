@@ -1,6 +1,7 @@
 package com.doyourwork.app.model
 
 import com.doyourwork.app.engine.AdminCode
+import com.doyourwork.app.engine.ProfilePhoto
 import com.doyourwork.app.sync.LocalEntry
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -46,6 +47,10 @@ data class Family(
  *  - "display|<id>": one item, the display name (empty list: none)
  * Added with player characters (older versions leave it alone):
  *  - "character|<id>": one item, the id of the character they picked (empty list: none picked)
+ * Added with profile photos and borders (older versions leave them alone). Written for every member,
+ * empty when there's none so taking one off reaches the other phones, and emptied for removed people:
+ *  - "photo|<id>": one item, their photo as base64 JPEG (see ProfilePhoto; empty list: none)
+ *  - "border|<id>": one item, the id of the border around it (see Borders; empty list: none)
  * Added with setup and admin codes:
  *  - "staff": "id:username" for members who don't play
  *  - "admins": ids
@@ -67,12 +72,15 @@ object FamilyState {
     const val DISPLAY = "display|"
     const val ADMIN_CODE = "admin_code|"
     const val CHARACTER = "character|"
+    const val PHOTO = "photo|"
+    const val BORDER = "border|"
 
     private val json = Json { ignoreUnknownKeys = true }
 
     /** True for keys this object owns; anything else (dares) is left alone. */
     fun owns(key: String) = key in setOf(PLAYERS, STAFF, ADMINS, REMOVED, CHORES, CHORE_ADDED, MEMBER_JOINED, NEXT_ID) ||
-        key.startsWith(DISPLAY) || key.startsWith(ADMIN_CODE) || key.startsWith(CHARACTER)
+        key.startsWith(DISPLAY) || key.startsWith(ADMIN_CODE) || key.startsWith(CHARACTER) ||
+        key.startsWith(PHOTO) || key.startsWith(BORDER)
 
     fun encode(f: Family): Map<String, List<String>> {
         val out = linkedMapOf<String, List<String>>()
@@ -86,6 +94,10 @@ object FamilyState {
         out[NEXT_ID] = listOf(f.nextPlayerId.toString())
         for (m in f.members) out[DISPLAY + m.id] = listOfNotNull(m.displayName)
         for (m in f.members) out[CHARACTER + m.id] = listOfNotNull(m.character)
+        for (m in f.members) out[PHOTO + m.id] = listOfNotNull(ProfilePhoto.clean(m.photo))
+        for (m in f.members) out[BORDER + m.id] = listOfNotNull(m.border)
+        // Someone taken off the list loses their photo and border everywhere, as on iOS.
+        for (id in f.removed) if (f.members.none { it.id == id }) { out[PHOTO + id] = emptyList(); out[BORDER + id] = emptyList() }
         for ((id, code) in f.adminCodes) if (f.members.any { it.id == id && it.isAdmin }) out[ADMIN_CODE + id] = listOf(code.encode())
         return out
     }
@@ -136,13 +148,18 @@ object FamilyState {
             listed.distinctBy { it.first.first }.map { (p, plays) ->
                 val (id, name) = p
                 val was = baseById[id]
-                Player(id, name, was?.displayName, admins?.contains(id) ?: was?.isAdmin ?: false, plays, was?.character)
+                Player(id, name, was?.displayName, admins?.contains(id) ?: was?.isAdmin ?: false, plays, was?.character, was?.photo, was?.border)
             }
         } else base.members.map { m -> admins?.let { m.copy(isAdmin = m.id in it) } ?: m }
         val withNames = members.map { m ->
             state[DISPLAY + m.id]?.let { m.copy(displayName = it.firstOrNull()?.ifBlank { null }) } ?: m
         }.map { m ->
             state[CHARACTER + m.id]?.let { m.copy(character = it.firstOrNull()?.ifBlank { null }) } ?: m
+        }.map { m ->
+            // Anything that isn't a photo the apps can show is no photo.
+            state[PHOTO + m.id]?.let { m.copy(photo = ProfilePhoto.clean(it.firstOrNull())) } ?: m
+        }.map { m ->
+            state[BORDER + m.id]?.let { m.copy(border = it.firstOrNull()?.ifBlank { null }) } ?: m
         }
         val codes = base.adminCodes.toMutableMap()
         for (m in withNames) state[ADMIN_CODE + m.id]?.let { items ->
