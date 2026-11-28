@@ -53,7 +53,12 @@ final class DOYOURWORKUITests: XCTestCase {
     /// be, and asking XCTest then fails the test ("activation point invalid"), so don't ask.
     private func isOnScreen(_ element: XCUIElement) -> Bool {
         guard element.exists else { return false }
-        if element.elementType != .alert, XCUIApplication().alerts.firstMatch.exists { return false }
+        let app = XCUIApplication()
+        if element.elementType != .alert, app.alerts.firstMatch.exists { return false }
+        // Off screen, or still sliding in or out, XCTest can't work out where to tap it and fails
+        // the test for asking, so only ask about something inside the window.
+        let frame = element.frame
+        guard !frame.isEmpty, app.windows.firstMatch.frame.insetBy(dx: 1, dy: 1).contains(CGPoint(x: frame.midX, y: frame.midY)) else { return false }
         return element.isHittable
     }
 
@@ -102,8 +107,16 @@ final class DOYOURWORKUITests: XCTestCase {
     /// grids only make what's close to being shown.
     private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
         _ = element.waitForExistence(timeout: 3)
-        for _ in 0..<6 where !isOnScreen(element) { app.swipeUp(velocity: .slow) }
-        for _ in 0..<6 where !isOnScreen(element) { app.swipeDown(velocity: .slow) }
+        // Short drags, a fifth of the screen each, so nothing is skipped past or left under the
+        // heading or the tab bar between looks.
+        func drag(up: Bool) {
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.6 : 0.4))
+            let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.4 : 0.6))
+            from.press(forDuration: 0.05, thenDragTo: to)
+            Thread.sleep(forTimeInterval: 0.4)
+        }
+        for _ in 0..<15 where !isOnScreen(element) { drag(up: true) }
+        for _ in 0..<15 where !isOnScreen(element) { drag(up: false) }
         XCTAssertTrue(isOnScreen(element), "\(element) should scroll into view")
     }
 
@@ -537,7 +550,8 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Restored:'")).firstMatch.waitForExistence(timeout: wait))
         tapWhenReady(app.buttons["OK"], "the restored message's OK")
         assertDemoHistory(in: app)
-        XCTAssertTrue(playerTile("riley", in: app).exists)
+        go(to: "family", in: app)
+        XCTAssertTrue(playerTile("riley", in: app).waitForExistence(timeout: wait))
         unlockAdmin(in: app)
 
         // Restoring over a scoreboard that's set up, from the admin area: it says so, and the
@@ -1293,7 +1307,8 @@ final class DOYOURWORKUITests: XCTestCase {
         app.buttons["Scan the code"].tap()
         // The other phone's family (jules and kai) replaces the demo one (riley and sam). The
         // admin area closes on its own, back on settings.
-        XCTAssertTrue(until(wait) { self.isOnScreen(app.buttons["page-family"]) }, "the admin area should close once the family has joined")
+        // page-feed, as on a wide screen the family is a pane of its own with no page button.
+        XCTAssertTrue(until(wait) { self.isOnScreen(app.buttons["page-feed"]) }, "the admin area should close once the family has joined")
         go(to: "family", in: app)
         XCTAssertTrue(playerTile("jules", in: app).waitForExistence(timeout: wait))
         XCTAssertTrue(playerTile("kai", in: app).waitForExistence(timeout: wait))
