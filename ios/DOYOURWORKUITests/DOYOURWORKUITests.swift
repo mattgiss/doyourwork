@@ -374,6 +374,14 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTFail("\(what) should close its alert when tapped")
     }
 
+    /// Taps a button once it's there: on a slow simulator one that appears after the last tap
+    /// (the card's band button, once a suggestion is in) can take a moment.
+    private func tapOnceThere(_ button: XCUIElement) {
+        XCTAssertTrue(button.waitForExistence(timeout: wait), "\(button) should appear")
+        _ = until(wait) { button.isHittable }
+        button.tap()
+    }
+
     /// Steps back once: out of the admin area, out of the bonus picker, or out of a profile.
     private func goBack(in app: XCUIApplication) {
         let back = app.buttons.matching(NSPredicate(format: "label == 'Back'")).allElementsBoundByIndex.first { $0.isHittable }
@@ -407,7 +415,7 @@ final class DOYOURWORKUITests: XCTestCase {
         screenshot("02-picker-empty", of: app)
 
         // Suggest a full card, then lock it in.
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         XCTAssertEqual(main.label, "Lock in my card")
         XCTAssertTrue(main.isEnabled)
         XCTAssertFalse(app.staticTexts["0 of 25 minutes"].exists, "the suggestion added minutes")
@@ -800,7 +808,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Do a bonus round"].exists)
         screenshot("15-rejected-day-picker", of: app)
 
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         XCTAssertEqual(main.label, "Lock in my card")
         main.tap()
         checkOffEverything(in: app).tap()
@@ -822,7 +830,7 @@ final class DOYOURWORKUITests: XCTestCase {
     func testSubmittingUnlocksThePuzzleAndClearingLevelsUp() {
         let app = launch(["-resetData", "-demoFamily"])
         open("riley", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         mainButton(in: app).tap()
 
         // Locked until the card is in.
@@ -886,7 +894,7 @@ final class DOYOURWORKUITests: XCTestCase {
     func testSubmittingUnlocksSnake() {
         let app = launch(["-resetData", "-demoFamily"])
         open("riley", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         mainButton(in: app).tap()
 
         let snake = app.buttons["play-snake"]
@@ -921,7 +929,7 @@ final class DOYOURWORKUITests: XCTestCase {
     func testThePuzzleStopsAfterAnHourADay() {
         let app = launch(["-resetData", "-demoFamily", "-puzzleSecondsLeft", "125"])
         open("riley", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         mainButton(in: app).tap()
         checkOffEverything(in: app).tap()
         let play = playButton(level: 1, in: app)
@@ -1083,8 +1091,8 @@ final class DOYOURWORKUITests: XCTestCase {
 
         // sam builds a card but doesn't submit it yet.
         open("sam", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
-        app.buttons["Lock in my card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
+        tapOnceThere(app.buttons["Lock in my card"])
         XCTAssertTrue(app.buttons["Check everything off first"].waitForExistence(timeout: wait))
         let onCard = uncheckedChores(in: app).count
         XCTAssertGreaterThan(onCard, 0)
@@ -1092,8 +1100,8 @@ final class DOYOURWORKUITests: XCTestCase {
         // riley is offered the same suggestion, takes it, and gets it in first.
         goBack(in: app)
         open("riley", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
-        app.buttons["Lock in my card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
+        tapOnceThere(app.buttons["Lock in my card"])
         checkOffEverything(in: app).tap()
         XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
 
@@ -1113,8 +1121,8 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(taken.waitForExistence(timeout: wait))
         XCTAssertTrue(taken.label.contains(onCard == 1 ? "has one of" : "has \(onCard) of"), taken.label)
         screenshot("18-picker-with-taken", of: app)
-        app.buttons["Suggest a 25-minute card"].tap()
-        app.buttons["Lock in my card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
+        tapOnceThere(app.buttons["Lock in my card"])
         checkOffEverything(in: app).tap()
         XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
     }
@@ -1144,7 +1152,7 @@ final class DOYOURWORKUITests: XCTestCase {
         open("broomrider", in: app)
         let main = mainButton(in: app)
         XCTAssertTrue(main.waitForExistence(timeout: wait))
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         XCTAssertEqual(main.label, "Lock in my card")
         storeScreenshot("03-pick-chores", of: app)
 
