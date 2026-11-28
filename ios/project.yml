@@ -37,7 +37,7 @@ targets:
         # Kept from the app's first name: changing it would make a new app, and installed phones
         # would stop getting updates.
         PRODUCT_BUNDLE_IDENTIFIER: com.gyattchores.app
-        MARKETING_VERSION: "1.3"
+        MARKETING_VERSION: "1.5"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"   # iPhone and iPad
@@ -46,7 +46,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: DOYOURWORK
         INFOPLIST_KEY_NSFaceIDUsageDescription: Open the admin area to approve chores.
-        INFOPLIST_KEY_NSCameraUsageDescription: Scan the code another phone shows to join its family.
+        INFOPLIST_KEY_NSCameraUsageDescription: Take a selfie for your profile, or scan the code another phone shows to join its family.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         # Dark only, like Clear.
@@ -84,7 +84,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.gyattchores.app.widgets
-        MARKETING_VERSION: "1.3"
+        MARKETING_VERSION: "1.5"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"

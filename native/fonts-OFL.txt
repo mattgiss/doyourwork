@@ -1,4 +1,7 @@
 Copyright 2023 The Schibsted-Grotesk Project Authors (https://github.com/schibsted/schibsted-grotesk)
+Copyright 2018 The Pacifico Project Authors (https://github.com/googlefonts/Pacifico)
+
+Both fonts (Schibsted Grotesk for the text, Pacifico for the heading) are under this license.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

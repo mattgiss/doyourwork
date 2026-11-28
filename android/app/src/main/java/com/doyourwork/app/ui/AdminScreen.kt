@@ -98,7 +98,7 @@ fun AdminScreen(vm: AppViewModel, logs: List<ChoreLog>, onBack: (() -> Unit)?) {
 
     // The admin area is in Clear's ocean theme, so it's plain at a glance which mode you're in.
     CompositionLocalProvider(LocalPalette provides Palette.OCEAN) {
-    Column(Modifier.fillMaxSize().background(Bg)) {
+    Column(Modifier.fillMaxSize().appBackdrop()) {
         Row(Modifier.fillMaxWidth().background(Palette.OCEAN.stops[0]).statusBarsPadding().padding(start = 4.dp + LocalColumnInset.current, end = 12.dp + LocalColumnInset.current, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) TextButton(onClick = onBack) { Text("Back", color = Palette.OCEAN.ink, fontWeight = FontWeight.Bold) }

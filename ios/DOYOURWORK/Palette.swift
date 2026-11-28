@@ -55,18 +55,40 @@ struct AppTheme: Identifiable, Equatable {
     }
 }
 
+/// How the whole app is lit, chosen per phone, on top of the theme's colours: dark (the theme as
+/// it is), light (a pale background with dark text), or glass (frosted panels over a wash of the
+/// theme's colours).
+enum Appearance: String, CaseIterable, Identifiable {
+    case dark, light, glass
+    var id: String { rawValue }
+    var name: String { rawValue.prefix(1).uppercased() + rawValue.dropFirst() }
+}
+
 /// The theme this phone uses, kept on the phone. The app's root redraws when it changes.
 final class ThemeStore: ObservableObject {
     static let shared = ThemeStore()
     private static let key = "theme"
+    private static let appearanceKey = "appearance"
     @Published var current: AppTheme {
         didSet { UserDefaults.standard.set(current.id, forKey: Self.key) }
     }
+    @Published var appearance: Appearance {
+        didSet { UserDefaults.standard.set(appearance.rawValue, forKey: Self.appearanceKey) }
+    }
     @Published var picking = false
     private init() {
+        // A UI test that starts from nothing starts from the default look too, not the last test's.
+        if AppStore.uiTesting && AppStore.launchArguments.contains("-resetData") {
+            UserDefaults.standard.removeObject(forKey: Self.key)
+            UserDefaults.standard.removeObject(forKey: Self.appearanceKey)
+        }
         let id = UserDefaults.standard.string(forKey: Self.key)
         current = AppTheme.all.first { $0.id == id } ?? .clear
+        appearance = Appearance(rawValue: UserDefaults.standard.string(forKey: Self.appearanceKey) ?? "") ?? .dark
     }
+
+    var isLight: Bool { appearance == .light }
+    var isGlass: Bool { appearance == .glass }
 }
 
 /// A run of colours that list rows step down, Clear-style, with the colour for text on them.
@@ -109,13 +131,29 @@ extension Color {
         return byte(c.0) << 16 | byte(c.1) << 8 | byte(c.2)
     }
 
-    /// The theme's background, behind everything.
-    static var appBackground: Color { ThemeStore.shared.current.bg }
+    /// The theme's background, behind everything. In glass, a deep shade of the theme under the
+    /// wash of colour (`AppBackdrop`).
+    static var appBackground: Color {
+        let s = ThemeStore.shared
+        switch s.appearance {
+        case .dark: return s.current.bg
+        case .light: return .mix(.hex(0xF2F2F7), s.current.main, 0.015)
+        case .glass: return .mix(s.current.bg, .black, 0.35)
+        }
+    }
     /// Ordinary text on the background.
-    static var appText: Color { ThemeStore.shared.current.text }
+    static var appText: Color { ThemeStore.shared.isLight ? .hex(0x141416) : ThemeStore.shared.current.text }
     /// Where a finished item goes, and quiet text, like a ticked-off row in Clear.
-    static var done: Color { ThemeStore.shared.current.muted }
-    static var surface: Color { ThemeStore.shared.current.surface }
+    static var done: Color { ThemeStore.shared.isLight ? .hex(0x6E6E73) : ThemeStore.shared.current.muted }
+    /// Tiles, cards and quiet buttons. In glass it's see-through, so the colour behind shows.
+    static var surface: Color {
+        let s = ThemeStore.shared
+        switch s.appearance {
+        case .dark: return s.current.surface
+        case .light: return .white
+        case .glass: return Color.white.opacity(0.13)
+        }
+    }
 }
 
 private extension UIColor {
@@ -211,5 +249,39 @@ extension View {
         #else
         self
         #endif
+    }
+}
+
+/// What's behind every page: the plain background, or in glass a wash of the theme's colours for
+/// the frosted panels to sit on.
+struct AppBackdrop: View {
+    var body: some View {
+        let s = ThemeStore.shared
+        if s.isGlass {
+            let stops = s.current.heat.stops
+            ZStack {
+                Color.appBackground
+                LinearGradient(colors: [stops[0].opacity(0.75), Color.appBackground.opacity(0.2), (stops.last ?? stops[0]).opacity(0.55)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                RadialGradient(colors: [s.current.sub.opacity(0.45), .clear], center: .bottomLeading, startRadius: 10, endRadius: 420)
+            }
+            .ignoresSafeArea()
+        } else {
+            Color.appBackground.ignoresSafeArea()
+        }
+    }
+}
+
+extension View {
+    /// A tile's or card's fill: the surface colour, or real frosted glass in the glass appearance.
+    @ViewBuilder func panel<S: Shape>(_ shape: S) -> some View {
+        if ThemeStore.shared.isGlass {
+            self.background(.ultraThinMaterial, in: shape)
+                .overlay(shape.stroke(Color.white.opacity(0.18), lineWidth: 0.75))
+        } else if ThemeStore.shared.isLight {
+            self.background(Color.surface, in: shape).shadow(color: .black.opacity(0.06), radius: 6, y: 2)
+        } else {
+            self.background(Color.surface, in: shape)
+        }
     }
 }

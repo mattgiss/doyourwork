@@ -240,13 +240,13 @@ fun Modifier.bleed(by: androidx.compose.ui.unit.Dp) = layout { measurable, const
 fun ThemePicker(onDone: () -> Unit) {
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val current = Themes.current
-    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDone, containerColor = current.bg, contentColor = current.text) {
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDone, containerColor = Bg, contentColor = Ink) {
         Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Pick a look", fontSize = 26.sp, fontWeight = FontWeight.Black, color = current.text, modifier = Modifier.weight(1f))
-                androidx.compose.material3.TextButton(onClick = onDone) { Text("Done", color = current.text, fontWeight = FontWeight.Bold) }
+                Text("Pick a look", fontSize = 26.sp, fontWeight = FontWeight.Black, color = Ink, modifier = Modifier.weight(1f))
+                androidx.compose.material3.TextButton(onClick = onDone) { Text("Done", color = Ink, fontWeight = FontWeight.Bold) }
             }
-            Text("Just for this phone. Everyone can pick their own.", color = current.muted, style = MaterialTheme.typography.bodyMedium,
+            Text("Just for this phone. Everyone can pick their own.", color = Done, style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 12.dp))
             for (row in AppTheme.ALL.chunked(2)) {
                 Row(Modifier.padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -254,7 +254,7 @@ fun ThemePicker(onDone: () -> Unit) {
                         val on = t.id == current.id
                         Row(
                             Modifier.weight(1f).heightIn(min = 52.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp)).background(t.bg)
-                                .border(if (on) 2.dp else 1.dp, if (on) current.text else Color.White.copy(alpha = 0.08f), androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                                .border(if (on) 2.dp else 1.dp, if (on) Ink else Ink.copy(alpha = 0.1f), androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
                                 .clickable(onClickLabel = "use ${t.name}") { Themes.pick(ctx, t) }.padding(horizontal = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {

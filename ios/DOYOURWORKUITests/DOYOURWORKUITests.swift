@@ -4,8 +4,10 @@ import XCTest
 /// picking chores to submitting, the bonus round, the save surviving a relaunch, and the admin
 /// area. Screenshots are attached to the results.
 ///
-/// The same tests run on an iPhone (one screen at a time) and an iPad (home list on the left, the
-/// open screen on the right); the helpers below paper over the difference in getting around.
+/// The app is four pages swiped between, family · feed · chores · settings, under the heading
+/// (docs/design/whiteboard-redesign.md). The same tests run on an iPhone (one page at a time) and
+/// an iPad (the family on the left, the other pages on the right); the helpers below paper over
+/// the difference in getting around.
 ///
 /// Every launch passes `-uiTesting`, which gives the app a separate data folder. `-resetData`
 /// starts from a fresh install; `-demoFamily` adds a family that's already set up (pat is the
@@ -36,16 +38,120 @@ final class DOYOURWORKUITests: XCTestCase {
         field.typeText(text)
     }
 
-    /// Opens the admin area and unlocks it. On a slow simulator the tap on Admin, right after the
-    /// home screen loads, can be lost, so tap again while the code field hasn't shown up.
-    private func unlockAdmin(in app: XCUIApplication, code: String? = nil) {
-        let admin = app.buttons["Admin"]
+    /// Waits until `condition` holds, polling, for up to `timeout` seconds.
+    @discardableResult
+    private func until(_ timeout: TimeInterval, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            Thread.sleep(forTimeInterval: 0.25)
+        }
+        return condition()
+    }
+
+    /// Whether `element` is there and can be tapped. While an alert is up nothing behind it can
+    /// be, and asking XCTest then fails the test ("activation point invalid"), so don't ask.
+    private func isOnScreen(_ element: XCUIElement) -> Bool {
+        guard element.exists else { return false }
+        let app = XCUIApplication()
+        if element.elementType != .alert, app.alerts.firstMatch.exists { return false }
+        // Off screen, or still sliding in or out, XCTest can't work out where to tap it and fails
+        // the test for asking, so only ask about something inside the window.
+        let frame = element.frame
+        guard !frame.isEmpty, app.windows.firstMatch.frame.insetBy(dx: 1, dy: 1).contains(CGPoint(x: frame.midX, y: frame.midY)) else { return false }
+        return element.isHittable
+    }
+
+    /// Leaves a person's profile (and the bonus picker inside it), back to the pages, by its back
+    /// chevron. With no profile open there's nothing to do.
+    private func closeProfile(in app: XCUIApplication) {
+        let back = app.buttons["back"]
+        let feed = app.buttons["page-feed"]
+        // A relaunch brings back the profile that was open, and it can still be sliding in when
+        // this runs, so go by what's on screen for a while, not by one look.
+        let deadline = Date().addingTimeInterval(wait)
+        var tries = 0
+        while Date() < deadline {
+            let backShown = isOnScreen(back)
+            if !backShown, isOnScreen(feed) { return }
+            if backShown, tries < 5 { back.tap(); tries += 1 }
+            Thread.sleep(forTimeInterval: 1)
+        }
+    }
+
+    /// Whether the app is showing the family pane beside the other pages (an iPad app given a wide
+    /// window): then the tab bar has no "family", since the family is always on the left.
+    private func showsTwoPanes(_ app: XCUIApplication) -> Bool {
+        closeProfile(in: app)
+        XCTAssertTrue(app.buttons["page-feed"].waitForExistence(timeout: wait), "the tab bar should be along the bottom")
+        return !app.buttons["page-family"].exists
+    }
+
+    /// Goes to one of the pages (family, feed, settings) by its button in the tab bar, closing a
+    /// profile first if one is open. With two panes the family is always on the left, so there's
+    /// nothing to tap for it.
+    private func go(to page: String, in app: XCUIApplication) {
+        if showsTwoPanes(app), page == "family" { return }
+        let name = app.buttons["page-\(page)"]
+        XCTAssertTrue(name.waitForExistence(timeout: wait), "the \(page) page should be there")
+        // On a slow simulator a tap while a page is still sliding can be lost: tap again.
+        for _ in 0..<3 where !name.isSelected {
+            if name.isHittable { name.tap() }
+            until(3) { name.isSelected }
+        }
+        XCTAssertTrue(name.isSelected, "the \(page) page should open")
+        Thread.sleep(forTimeInterval: 0.4)   // let the page finish sliding in
+    }
+
+    /// Scrolls the page until `element` is on screen. It may not exist until it's scrolled near:
+    /// grids only make what's close to being shown.
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication) {
+        _ = element.waitForExistence(timeout: 3)
+        // Short drags, a fifth of the screen each, so nothing is skipped past or left under the
+        // heading or the tab bar between looks.
+        // Drag in the element's own column: with two panes the middle of the screen is the gap
+        // (or the fold) between them, and nothing scrolls there.
+        // Until a grid makes the element, go by the tab bar, which sits under the pages' pane.
+        func column() -> CGFloat {
+            let width = app.frame.width
+            guard width > 0 else { return 0.5 }
+            for guide in [element, app.buttons["page-feed"]] where guide.exists && !guide.frame.isEmpty {
+                return min(max(guide.frame.midX / width, 0.05), 0.95)
+            }
+            return 0.5
+        }
+        func drag(up: Bool) {
+            let x = column()
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: x, dy: up ? 0.6 : 0.4))
+            let to = app.coordinate(withNormalizedOffset: CGVector(dx: x, dy: up ? 0.4 : 0.6))
+            from.press(forDuration: 0.05, thenDragTo: to)
+            Thread.sleep(forTimeInterval: 0.4)
+        }
+        for _ in 0..<15 where !isOnScreen(element) { drag(up: true) }
+        for _ in 0..<15 where !isOnScreen(element) { drag(up: false) }
+        // A page that's still sliding in, or redrawing after a change of look, settles in a moment.
+        XCTAssertTrue(until(3) { self.isOnScreen(element) }, "\(element) should scroll into view")
+    }
+
+    /// Opens the admin area from the settings page, without unlocking it. On a slow simulator the
+    /// tap on Admin, right after the page slides in, can be lost, so tap again while the code field
+    /// hasn't shown up.
+    private func openAdmin(in app: XCUIApplication) {
+        go(to: "settings", in: app)
+        let admin = app.buttons["admin"]
         let field = app.secureTextFields.firstMatch
-        XCTAssertTrue(admin.waitForExistence(timeout: wait))
         for _ in 0..<3 where !field.exists {
+            reveal(admin, in: app)
             if admin.isHittable { admin.tap() }
             _ = field.waitForExistence(timeout: wait / 3)
         }
+        XCTAssertTrue(field.exists, "Admin should open the code screen")
+    }
+
+    /// Opens the admin area and unlocks it.
+    private func unlockAdmin(in app: XCUIApplication, code: String? = nil) {
+        openAdmin(in: app)
+        let field = app.secureTextFields.firstMatch
         type(code ?? adminCode, into: field)
         app.buttons["Unlock"].tap()
         XCTAssertTrue(app.segmentedControls.firstMatch.waitForExistence(timeout: wait), "the right code opens the admin area")
@@ -130,13 +236,32 @@ final class DOYOURWORKUITests: XCTestCase {
         add(attachment)
     }
 
-    /// The row on the home screen that opens a player's day (it's the one showing their points).
-    private func playerRow(_ name: String, in app: XCUIApplication) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS ' pts'", name)).firstMatch
+    /// A person's tile on the family page: their shown name, plus ", N-day streak" if they have one.
+    private func playerTile(_ name: String, in app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'tile-' AND (label == %@ OR label BEGINSWITH %@)", name, name + ", ")).firstMatch
     }
 
-    /// The big band button at the bottom of the picker and the card. The home screen is still
-    /// around while the next screen slides in (and always, on an iPad), and its dares button is the
+    /// A person's name where it can be tapped to rename them: on the chores page's header card, and
+    /// on the settings page's profile card. Only the one on the page that's showing is on screen.
+    private func nameButton(_ name: String, in app: XCUIApplication) -> XCUIElement? {
+        app.buttons.matching(NSPredicate(format: "label == %@ AND NOT (identifier BEGINSWITH 'tile-') AND NOT (identifier BEGINSWITH 'choose-')", name))
+            .allElementsBoundByIndex.first { $0.isHittable }
+    }
+
+    /// One thing done on the feed: "riley load dishwasher", the time, and its verdict.
+    private func feedItem(_ name: String, _ verdict: String, in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@ AND label ENDSWITH %@", name + " ", verdict)).firstMatch
+    }
+
+    /// `-demoData`'s month shows: on the feed, riley's approved chores and sam's waiting ones.
+    private func assertDemoHistory(in app: XCUIApplication) {
+        go(to: "feed", in: app)
+        XCTAssertTrue(app.staticTexts["Today"].waitForExistence(timeout: wait), "the feed groups today's chores under Today")
+        XCTAssertTrue(feedItem("riley", "approved", in: app).waitForExistence(timeout: wait), "riley's approved chores are on the feed")
+        XCTAssertTrue(feedItem("sam", "waiting", in: app).exists, "sam's chores from today are waiting")
+    }
+
+    /// The big band button at the bottom of the picker and the card. The feed's dares button is the
     /// same kind of button, so rule that out.
     private func mainButton(in app: XCUIApplication) -> XCUIElement {
         app.buttons.matching(NSPredicate(format: "identifier == 'main' AND NOT (label BEGINSWITH 'Make a dare')")).firstMatch
@@ -188,33 +313,34 @@ final class DOYOURWORKUITests: XCTestCase {
         return submit
     }
 
-    /// Opens a player's day. With two panes (an iPad app given a wide window) it opens beside the
-    /// list, with that player highlighted; with one (a phone, or an iPad app in a narrow Stage
-    /// Manager window) it replaces the list and there's a way back. Which one is up to the window,
-    /// not the device, so accept either.
+    /// Opens a player's profile, with their day: goes to the family page (with two panes, an iPad
+    /// app given a wide window, it's always on the left) and taps their tile. The profile has their
+    /// name on its header card, beside a back chevron.
     private func open(_ name: String, in app: XCUIApplication) {
-        let row = playerRow(name, in: app)
-        XCTAssertTrue(row.waitForExistence(timeout: wait), "\(name) should be on the home screen")
-        let back = app.buttons["Back"]
-        func opened() -> Bool { back.exists || (row.exists && row.isSelected) }
-        row.tap()
-        // On a slow simulator the highlight or the next screen can trail the tap, and a tap that
-        // lands while the list is still settling can be lost: wait, and tap again.
-        // An expectation can only be waited on once, so each try gets a fresh one.
-        func waitUntilOpened() -> Bool {
-            let done = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in opened() }, object: nil)
-            return XCTWaiter().wait(for: [done], timeout: wait / 3) == .completed
+        go(to: "family", in: app)
+        let tile = playerTile(name, in: app)
+        XCTAssertTrue(tile.waitForExistence(timeout: wait), "\(name) should be on the family page")
+        let back = app.buttons["back"]
+        func opened() -> Bool { isOnScreen(back) && nameButton(name, in: app) != nil }
+        // On a slow simulator the profile can trail the tap, and a tap that lands while the page
+        // is still settling can be lost: wait, and tap again.
+        for _ in 0..<3 where !opened() {
+            if isOnScreen(tile) { tile.tap() }
+            until(wait / 3, opened)
         }
-        for _ in 0..<3 where !waitUntilOpened() {
-            if row.exists, row.isHittable { row.tap() }
-        }
-        XCTAssertTrue(opened(), "\(name)'s day should open")
+        XCTAssertTrue(opened(), "\(name)'s profile should open")
     }
 
-    /// Whether the app is showing the list and a day side by side: with nobody picked yet, the
-    /// right-hand side shows where everyone is today and asks you to pick someone.
-    private func showsTwoPanes(_ app: XCUIApplication) -> Bool {
-        app.staticTexts["Pick someone to see their card."].waitForExistence(timeout: 3)
+    /// Opens settings for a person: their profile's camera button ("Photo and border") goes to
+    /// settings with them chosen.
+    private func openSettings(for name: String, in app: XCUIApplication) {
+        open(name, in: app)
+        let look = app.buttons["edit-look"]
+        XCTAssertTrue(look.waitForExistence(timeout: wait), "on a phone that isn't someone's, anyone's look can be changed")
+        look.tap()
+        let settings = app.buttons["page-settings"]
+        XCTAssertTrue(until(wait) { settings.exists && settings.isSelected }, "Photo and border goes to settings")
+        XCTAssertTrue(until(wait) { self.nameButton(name, in: app) != nil }, "settings shows \(name)")
     }
 
     /// Taps an alert's button once the alert has stopped moving, by its position. On CI's
@@ -248,12 +374,20 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTFail("\(what) should close its alert when tapped")
     }
 
-    /// Back to the home list. On an iPad it never left, so there's only something to close when
-    /// the admin area or the bonus picker is open.
+    /// Taps a button once it's there: on a slow simulator one that appears after the last tap
+    /// (the card's band button, once a suggestion is in) can take a moment.
+    private func tapOnceThere(_ button: XCUIElement) {
+        XCTAssertTrue(button.waitForExistence(timeout: wait), "\(button) should appear")
+        _ = until(wait) { button.isHittable }
+        button.tap()
+    }
+
+    /// Steps back once: out of the admin area, out of the bonus picker, or out of a profile.
     private func goBack(in app: XCUIApplication) {
-        let back = app.buttons["Back"]
-        if back.exists { back.tap() }
-        XCTAssertTrue(app.staticTexts["DOYOURWORK"].waitForExistence(timeout: wait))
+        let back = app.buttons.matching(NSPredicate(format: "label == 'Back'")).allElementsBoundByIndex.first { $0.isHittable }
+        XCTAssertNotNil(back, "there should be a way back")
+        back?.tap()
+        Thread.sleep(forTimeInterval: 0.6)   // let it slide away
     }
 
     // MARK: Tests
@@ -261,11 +395,15 @@ final class DOYOURWORKUITests: XCTestCase {
     func testADayFromPickingToSubmitting() {
         let app = launch(["-resetData", "-demoFamily"])
 
-        // Home: both players, nobody has cleared a day yet.
-        XCTAssertTrue(playerRow("riley", in: app).exists)
-        XCTAssertTrue(playerRow("sam", in: app).exists)
-        XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label == '0/30 · 0%'")).count, 2)
+        // Family: both players, and nobody has a streak yet.
+        go(to: "family", in: app)
+        XCTAssertTrue(playerTile("riley", in: app).waitForExistence(timeout: wait))
+        XCTAssertEqual(playerTile("riley", in: app).label, "riley, 0-day streak")
+        XCTAssertEqual(playerTile("sam", in: app).label, "sam, 0-day streak")
         screenshot("01-home-empty", of: app)
+        // Feed: nothing done yet.
+        go(to: "feed", in: app)
+        XCTAssertTrue(app.staticTexts["Nothing done yet this week. Chores show up here as they're sent in."].waitForExistence(timeout: wait))
 
         // Picker: nothing picked, so the card can't be locked in yet.
         open("riley", in: app)
@@ -277,7 +415,7 @@ final class DOYOURWORKUITests: XCTestCase {
         screenshot("02-picker-empty", of: app)
 
         // Suggest a full card, then lock it in.
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         XCTAssertEqual(main.label, "Lock in my card")
         XCTAssertTrue(main.isEnabled)
         XCTAssertFalse(app.staticTexts["0 of 25 minutes"].exists, "the suggestion added minutes")
@@ -328,7 +466,7 @@ final class DOYOURWORKUITests: XCTestCase {
         let code = app.secureTextFields.firstMatch
 
         // A wrong code gets nowhere.
-        app.buttons["Admin"].tap()
+        openAdmin(in: app)
         type("definitely-not-it", into: code)
         app.buttons["Unlock"].tap()
         XCTAssertTrue(app.staticTexts["That code didn't match. Try again?"].waitForExistence(timeout: wait))
@@ -359,8 +497,7 @@ final class DOYOURWORKUITests: XCTestCase {
     /// worth of one person's chores is approved with one tap.
     func testApproveAllOfADayInOneTap() {
         let app = launch(["-resetData", "-demoData"])
-        app.buttons["Admin"].tap()
-        XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: wait))
+        openAdmin(in: app)
         // No tap on the field first: it already has the keyboard.
         app.typeText(adminCode + "\n")
         XCTAssertTrue(app.segmentedControls.firstMatch.waitForExistence(timeout: wait), "the code typed straight away should unlock")
@@ -374,7 +511,7 @@ final class DOYOURWORKUITests: XCTestCase {
     /// A backup saved to Files brings the whole scoreboard back after erasing everything.
     func testBackupSurvivesErasingEverything() throws {
         let app = launch(["-resetData", "-demoData"])
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
+        assertDemoHistory(in: app)
         unlockAdmin(in: app)
         adminSection("device", in: app)
 
@@ -433,8 +570,9 @@ final class DOYOURWORKUITests: XCTestCase {
         // Everything's back: the month of history, and the admin's code.
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Restored:'")).firstMatch.waitForExistence(timeout: wait))
         tapWhenReady(app.buttons["OK"], "the restored message's OK")
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
-        XCTAssertTrue(playerRow("riley", in: app).exists)
+        assertDemoHistory(in: app)
+        go(to: "family", in: app)
+        XCTAssertTrue(playerTile("riley", in: app).waitForExistence(timeout: wait))
         unlockAdmin(in: app)
 
         // Restoring over a scoreboard that's set up, from the admin area: it says so, and the
@@ -453,7 +591,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Restored:'")).firstMatch.waitForExistence(timeout: wait))
         tapWhenReady(app.buttons["OK"], "the restored message's OK")
         goBack(in: app)
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
+        assertDemoHistory(in: app)
     }
 
     /// From a fresh install to a working scoreboard, with chores written in the family's own words.
@@ -465,7 +603,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: wait))
         XCTAssertTrue(app.staticTexts["Everything stays on this device."].exists)
         XCTAssertTrue(app.staticTexts["No accounts, no sign-in, no ads, no tracking."].exists)
-        XCTAssertFalse(app.buttons["Admin"].exists)
+        XCTAssertFalse(app.buttons["admin"].exists)
         screenshot("20-setup-welcome", of: app)
         start.tap()
 
@@ -512,10 +650,10 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(add.waitForExistence(timeout: wait))
         add.tap()
 
-        // The scoreboard: the two players, and not the admin, who doesn't do chores.
-        XCTAssertTrue(playerRow("riley", in: app).waitForExistence(timeout: wait))
-        XCTAssertTrue(playerRow("sam", in: app).exists)
-        XCTAssertFalse(playerRow("pat", in: app).exists)
+        // The family: the two players, and not the admin, who doesn't do chores.
+        XCTAssertTrue(playerTile("riley", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(playerTile("sam", in: app).exists)
+        XCTAssertFalse(playerTile("pat", in: app).exists)
         screenshot("25-setup-done", of: app)
 
         // Their own three chores are what there is to pick, at their normal times: nothing starts overdue.
@@ -530,7 +668,8 @@ final class DOYOURWORKUITests: XCTestCase {
         // It's all still there after a restart, and the code chosen at setup opens the admin area.
         app.terminate()
         let relaunched = launch()
-        XCTAssertTrue(playerRow("sam", in: relaunched).waitForExistence(timeout: wait))
+        go(to: "family", in: relaunched)
+        XCTAssertTrue(playerTile("sam", in: relaunched).waitForExistence(timeout: wait))
         XCTAssertFalse(relaunched.buttons["Set up this device"].exists)
         unlockAdmin(in: relaunched)
         goBack(in: relaunched)
@@ -585,9 +724,10 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["28 chores. left undone, a chore takes longer the next time it's picked."].exists)
         screenshot("29-admin-chores", of: app)
 
-        // Out on the scoreboard: the new player is there, and her code opens the admin area too.
+        // Out on the family page: the new player is there, and her code opens the admin area too.
         goBack(in: app)
-        XCTAssertTrue(playerRow("samantha", in: app).waitForExistence(timeout: wait))
+        go(to: "family", in: app)
+        XCTAssertTrue(playerTile("samantha", in: app).waitForExistence(timeout: wait))
         unlockAdmin(in: app, code: "1357")
         goBack(in: app)
     }
@@ -595,7 +735,7 @@ final class DOYOURWORKUITests: XCTestCase {
     /// Everything the app holds can be wiped from inside it.
     func testEraseEverythingStartsOver() throws {
         let app = launch(["-resetData", "-demoData"])
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
+        assertDemoHistory(in: app)
         unlockAdmin(in: app)
         adminSection("device", in: app)
         XCTAssertTrue(app.staticTexts["Your data"].waitForExistence(timeout: wait))
@@ -607,41 +747,49 @@ final class DOYOURWORKUITests: XCTestCase {
 
         // Back to a fresh install, and it stays that way after a restart.
         XCTAssertTrue(app.buttons["Set up this device"].waitForExistence(timeout: wait))
-        XCTAssertFalse(playerRow("riley", in: app).exists)
+        XCTAssertFalse(playerTile("riley", in: app).exists)
         app.terminate()
         let relaunched = launch()
         XCTAssertTrue(relaunched.buttons["Set up this device"].waitForExistence(timeout: wait))
-        XCTAssertFalse(relaunched.staticTexts["27/30 · 90%"].exists)
+        XCTAssertFalse(playerTile("riley", in: relaunched).exists)
+        XCTAssertFalse(relaunched.buttons["page-feed"].exists, "no pages until it's set up again")
     }
 
     func testDemoHistoryShowsTheDailyLogAndVerdicts() {
         let app = launch(["-resetData", "-demoData"])
 
-        // Thirty days: the steady player takes every ninth day off, so 27 of 30.
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].waitForExistence(timeout: wait))
-        XCTAssertTrue(app.staticTexts["15/30 · 50%"].exists)
-        XCTAssertFalse(playerRow("riley", in: app).label.contains("v1.0"), "a month of approved chores levels you up")
+        // The family: the steady player is on a streak (they took every ninth day off, not today).
+        go(to: "family", in: app)
+        let riley = playerTile("riley", in: app)
+        XCTAssertTrue(riley.waitForExistence(timeout: wait))
+        XCTAssertTrue(riley.label.hasSuffix("-day streak") && riley.label != "riley, 0-day streak", riley.label)
         screenshot("10-home-with-history", of: app)
+
+        // The feed: this week's chores, newest first, with their verdicts.
+        assertDemoHistory(in: app)
+        XCTAssertTrue(app.staticTexts["Yesterday"].exists, "earlier days get their own heading")
+        screenshot("13-feed-with-history", of: app)
+
+        // However far the feed is pushed, the heading stays where it is.
+        let title = app.staticTexts["DOYOURWORK"]
+        let before = title.frame
+        feedItem("riley", "approved", in: app).swipeUp()
+        XCTAssertEqual(title.frame, before, "the heading shouldn't scroll away")
+        XCTAssertTrue(title.isHittable)
+        screenshot("14-home-pushed-up", of: app)
 
         // The second player's chores for today are waiting on an admin.
         open("sam", in: app)
         XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
         screenshot("11-card-awaiting", of: app)
 
-        // The first player's are approved.
-        goBack(in: app)
+        // The first player's are approved, and a month of approved chores levels you up.
         open("riley", in: app)
         XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
+        let version = app.staticTexts.matching(NSPredicate(format: "label CONTAINS ' this week'")).firstMatch
+        XCTAssertTrue(version.exists)
+        XCTAssertFalse(version.label.hasPrefix("v1.0 "), version.label)
         screenshot("12-card-approved", of: app)
-
-        goBack(in: app)
-        // However far the list is pushed, the title stays where it is.
-        let title = app.staticTexts["DOYOURWORK"]
-        let before = title.frame
-        app.staticTexts["27/30 · 90%"].swipeUp()
-        XCTAssertEqual(title.frame, before, "the title shouldn't scroll away")
-        XCTAssertTrue(title.isHittable)
-        screenshot("14-home-pushed-up", of: app)
     }
 
     /// A bug we shipped: chores were submitted under a player's name, a parent rejected them all, and
@@ -660,7 +808,7 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Do a bonus round"].exists)
         screenshot("15-rejected-day-picker", of: app)
 
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         XCTAssertEqual(main.label, "Lock in my card")
         main.tap()
         checkOffEverything(in: app).tap()
@@ -682,7 +830,7 @@ final class DOYOURWORKUITests: XCTestCase {
     func testSubmittingUnlocksThePuzzleAndClearingLevelsUp() {
         let app = launch(["-resetData", "-demoFamily"])
         open("riley", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         mainButton(in: app).tap()
 
         // Locked until the card is in.
@@ -746,7 +894,7 @@ final class DOYOURWORKUITests: XCTestCase {
     func testSubmittingUnlocksSnake() {
         let app = launch(["-resetData", "-demoFamily"])
         open("riley", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         mainButton(in: app).tap()
 
         let snake = app.buttons["play-snake"]
@@ -781,7 +929,7 @@ final class DOYOURWORKUITests: XCTestCase {
     func testThePuzzleStopsAfterAnHourADay() {
         let app = launch(["-resetData", "-demoFamily", "-puzzleSecondsLeft", "125"])
         open("riley", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         mainButton(in: app).tap()
         checkOffEverything(in: app).tap()
         let play = playButton(level: 1, in: app)
@@ -811,73 +959,130 @@ final class DOYOURWORKUITests: XCTestCase {
         let app = launch(["-resetData", "-demoFamily"])
         let nickname = "xX_D1no_K1ng_Xx"
 
-        // A player gives themselves a display name from their own screen: no admin needed.
+        // A player gives themselves a display name from their own day: no admin needed. Their
+        // name on the header card is what's tapped.
         open("sam", in: app)
-        app.buttons["Rename"].tap()
+        nameButton("sam", in: app)?.tap()
         let field = app.alerts.textFields.firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: wait))
+        XCTAssertTrue(field.waitForExistence(timeout: wait), "tapping the name asks for a display name")
+        XCTAssertTrue(app.alerts["Display name"].exists)
         field.typeText(nickname)
         app.alerts.buttons["Save"].tap()
 
         // It replaces the username wherever the player is shown…
-        XCTAssertTrue(app.staticTexts[nickname].waitForExistence(timeout: wait))
+        XCTAssertTrue(until(wait) { self.nameButton(nickname, in: app) != nil }, "the header card shows the new name")
         XCTAssertTrue(mainButton(in: app).waitForExistence(timeout: wait), "their day still opens as normal")
-        goBack(in: app)
-        XCTAssertTrue(playerRow(nickname, in: app).waitForExistence(timeout: wait))
-        XCTAssertFalse(playerRow("sam", in: app).exists)
-        XCTAssertTrue(playerRow("riley", in: app).exists, "nobody else's name changes")
+        go(to: "family", in: app)
+        XCTAssertTrue(playerTile(nickname, in: app).waitForExistence(timeout: wait))
+        XCTAssertFalse(playerTile("sam", in: app).exists)
+        XCTAssertTrue(playerTile("riley", in: app).exists, "nobody else's name changes")
         screenshot("19-display-name", of: app)
 
         // …is still there after the app restarts…
         app.terminate()
         let relaunched = launch()
-        XCTAssertTrue(playerRow(nickname, in: relaunched).waitForExistence(timeout: wait))
+        go(to: "family", in: relaunched)
+        XCTAssertTrue(playerTile(nickname, in: relaunched).waitForExistence(timeout: wait))
 
-        // …and comes off again, with the username underneath untouched.
-        open(nickname, in: relaunched)
-        relaunched.buttons["Rename"].tap()
+        // …and comes off again, from the name on the settings page's profile card, with the
+        // username underneath untouched.
+        openSettings(for: nickname, in: relaunched)
+        nameButton(nickname, in: relaunched)?.tap()
         XCTAssertTrue(relaunched.alerts.buttons["Use my username"].waitForExistence(timeout: wait))
         relaunched.alerts.buttons["Use my username"].tap()
-        goBack(in: relaunched)
-        XCTAssertTrue(playerRow("sam", in: relaunched).waitForExistence(timeout: wait))
-        XCTAssertFalse(playerRow(nickname, in: relaunched).exists)
+        XCTAssertTrue(until(wait) { self.nameButton("sam", in: relaunched) != nil }, "the profile card shows the username again")
+        go(to: "family", in: relaunched)
+        XCTAssertTrue(playerTile("sam", in: relaunched).waitForExistence(timeout: wait))
+        XCTAssertFalse(playerTile(nickname, in: relaunched).exists)
     }
 
-    /// Everyone has a character on their tile. A player picks their own from their own screen, it
+    /// Everyone has a character on their tile. A player picks their own from the settings page, it
     /// survives a relaunch, and nobody else can take it while it's theirs.
     func testAPlayerPicksTheirOwnCharacter() {
         let app = launch(["-resetData", "-demoFamily"])
-        func mine(_ name: String, in app: XCUIApplication) -> XCUIElement {
-            app.buttons.matching(NSPredicate(format: "identifier == 'character' AND label CONTAINS %@", name)).firstMatch
+        let robot = app.buttons["character-robot"]
+        /// Opens the character picker on someone's settings.
+        func pickCharacter(_ name: String, in app: XCUIApplication) {
+            openSettings(for: name, in: app)
+            let change = app.buttons["Change character"]
+            reveal(change, in: app)
+            change.tap()
+            XCTAssertTrue(app.buttons["character-robot"].waitForExistence(timeout: wait), "the character picker should open")
         }
 
         // Sam starts with one given from their username, and swaps it for the robot.
-        open("sam", in: app)
-        XCTAssertTrue(app.buttons["character"].waitForExistence(timeout: wait))
-        XCTAssertFalse(mine("Robot", in: app).exists)
-        app.buttons["character"].tap()
-        let robot = app.buttons["character-robot"]
-        XCTAssertTrue(robot.waitForExistence(timeout: wait))
+        pickCharacter("sam", in: app)
         XCTAssertTrue(robot.isEnabled)
+        XCTAssertFalse(robot.isSelected, "sam doesn't start as the robot")
         screenshot("20-pick-a-character", of: app)
         robot.tap()
-        XCTAssertTrue(mine("Robot", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(robot.waitForNonExistence(timeout: wait), "picking one closes the picker")
+        pickCharacter("sam", in: app)
+        XCTAssertTrue(robot.isSelected, "the robot is sam's now")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(robot.waitForNonExistence(timeout: wait))
 
         // Riley sees the robot is Sam's and can't have it.
-        goBack(in: app)
-        open("riley", in: app)
-        XCTAssertTrue(app.buttons["character"].waitForExistence(timeout: wait))
-        app.buttons["character"].tap()
-        XCTAssertTrue(app.buttons["character-robot"].waitForExistence(timeout: wait))
-        XCTAssertFalse(app.buttons["character-robot"].isEnabled, "the robot is sam's")
+        pickCharacter("riley", in: app)
+        XCTAssertFalse(robot.isEnabled, "the robot is sam's")
+        XCTAssertEqual(robot.value as? String, "sam has this one")
         app.buttons["Done"].tap()
-        XCTAssertFalse(mine("Robot", in: app).exists)
+        XCTAssertTrue(robot.waitForNonExistence(timeout: wait))
 
         // Still Sam's after the app restarts.
         app.terminate()
         let relaunched = launch()
-        open("sam", in: relaunched)
-        XCTAssertTrue(mine("Robot", in: relaunched).waitForExistence(timeout: wait))
+        pickCharacter("sam", in: relaunched)
+        XCTAssertTrue(relaunched.buttons["character-robot"].isSelected)
+    }
+
+    /// A person picks a border to wear from the borders they've earned, on the settings page. One
+    /// they haven't earned can't be picked. It's still theirs after a relaunch.
+    func testAPlayerPicksABorder() {
+        let app = launch(["-resetData", "-demoData"])
+        func border(_ id: String, in app: XCUIApplication) -> XCUIElement { app.buttons["border-\(id)"] }
+
+        // riley has a month of chores behind them (about 2700 points): the ring, the puppy and
+        // hearts are theirs to wear, the halo (5000) isn't yet. Nothing's worn to begin with.
+        openSettings(for: "riley", in: app)
+        XCTAssertTrue(app.staticTexts["Borders"].waitForExistence(timeout: wait))
+        XCTAssertTrue(border("none", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(border("none", in: app).isSelected, "no border until one is picked")
+        reveal(border("ring", in: app), in: app)
+        XCTAssertTrue(border("ring", in: app).isEnabled, "the ring is unlocked from 0 points")
+        XCTAssertTrue(border("puppy", in: app).isEnabled, "the puppy unlocks at 50 points")
+        reveal(border("hearts", in: app), in: app)
+        XCTAssertTrue(border("hearts", in: app).isEnabled, "hearts unlock at 500 points")
+        reveal(border("halo", in: app), in: app)
+        XCTAssertFalse(border("halo", in: app).isEnabled, "the halo needs 5000 points")
+        // The number is written the phone's way ("5,000" here), so only its shape is checked.
+        let haloValue = border("halo", in: app).value as? String ?? ""
+        XCTAssertTrue(haloValue.hasPrefix("unlocks at 5") && haloValue.hasSuffix("000 points"), haloValue)
+
+        let hearts = border("hearts", in: app)
+        reveal(hearts, in: app)
+        hearts.tap()
+        XCTAssertTrue(until(wait) { hearts.isSelected }, "the border tapped is the one worn")
+        XCTAssertEqual(hearts.value as? String, "wearing")
+        reveal(border("none", in: app), in: app)
+        XCTAssertFalse(border("none", in: app).isSelected)
+        XCTAssertFalse(border("ring", in: app).isSelected)
+        screenshot("21-pick-a-border", of: app)
+
+        // A locked one does nothing.
+        let halo = border("halo", in: app)
+        reveal(halo, in: app)
+        halo.tap()
+        XCTAssertFalse(halo.isSelected)
+        reveal(hearts, in: app)
+        XCTAssertTrue(hearts.isSelected, "a locked border can't be picked")
+
+        // Still worn after the app restarts.
+        app.terminate()
+        let relaunched = launch()
+        openSettings(for: "riley", in: relaunched)
+        reveal(border("hearts", in: relaunched), in: relaunched)
+        XCTAssertTrue(border("hearts", in: relaunched).isSelected)
     }
 
     /// One chore, one person, per day — including when two players go for the same chores at once.
@@ -886,8 +1091,8 @@ final class DOYOURWORKUITests: XCTestCase {
 
         // sam builds a card but doesn't submit it yet.
         open("sam", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
-        app.buttons["Lock in my card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
+        tapOnceThere(app.buttons["Lock in my card"])
         XCTAssertTrue(app.buttons["Check everything off first"].waitForExistence(timeout: wait))
         let onCard = uncheckedChores(in: app).count
         XCTAssertGreaterThan(onCard, 0)
@@ -895,8 +1100,8 @@ final class DOYOURWORKUITests: XCTestCase {
         // riley is offered the same suggestion, takes it, and gets it in first.
         goBack(in: app)
         open("riley", in: app)
-        app.buttons["Suggest a 25-minute card"].tap()
-        app.buttons["Lock in my card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
+        tapOnceThere(app.buttons["Lock in my card"])
         checkOffEverything(in: app).tap()
         XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
 
@@ -916,8 +1121,8 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(taken.waitForExistence(timeout: wait))
         XCTAssertTrue(taken.label.contains(onCard == 1 ? "has one of" : "has \(onCard) of"), taken.label)
         screenshot("18-picker-with-taken", of: app)
-        app.buttons["Suggest a 25-minute card"].tap()
-        app.buttons["Lock in my card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
+        tapOnceThere(app.buttons["Lock in my card"])
         checkOffEverything(in: app).tap()
         XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
     }
@@ -932,11 +1137,12 @@ final class DOYOURWORKUITests: XCTestCase {
         storeScreenshot("02-private-by-design", of: fresh)
         fresh.terminate()
 
-        // 1. The scoreboard: this week's board, who's playing, and the 30-day log.
+        // 1. The family: everyone's tile, with their streaks.
         let app = launch(["-resetData", "-demoData", "-screenshots"])
-        XCTAssertTrue(playerRow("sockninja", in: app).waitForExistence(timeout: wait))
+        go(to: "family", in: app)
+        XCTAssertTrue(playerTile("sockninja", in: app).waitForExistence(timeout: wait))
         if showsTwoPanes(app) {
-            // Half an iPad's screen would be empty with nobody picked: show a day waiting on an admin.
+            // The right-hand side would only ask who's doing chores: show a day waiting on an admin.
             open("dishwizard", in: app)
             XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
         }
@@ -946,7 +1152,7 @@ final class DOYOURWORKUITests: XCTestCase {
         open("broomrider", in: app)
         let main = mainButton(in: app)
         XCTAssertTrue(main.waitForExistence(timeout: wait))
-        app.buttons["Suggest a 25-minute card"].tap()
+        tapOnceThere(app.buttons["Suggest a 25-minute card"])
         XCTAssertEqual(main.label, "Lock in my card")
         storeScreenshot("03-pick-chores", of: app)
 
@@ -960,8 +1166,7 @@ final class DOYOURWORKUITests: XCTestCase {
         }
         storeScreenshot("04-todays-card", of: app)
 
-        // 6. The admin area, with today's chores waiting for a yes or no.
-        goBack(in: app)
+        // 6. The admin area (from settings), with today's chores waiting for a yes or no.
         unlockAdmin(in: app)
         XCTAssertTrue(app.buttons["Approve this chore"].firstMatch.waitForExistence(timeout: wait))
         storeScreenshot("06-approvals", of: app)
@@ -979,58 +1184,110 @@ final class DOYOURWORKUITests: XCTestCase {
         try XCTSkipUnless(isPad, "two panes are the iPad layout")
         let app = launch(["-resetData", "-demoData"])
         try XCTSkipUnless(showsTwoPanes(app), "the app's window is too narrow for two panes; give it the whole screen")
+        let sent = app.staticTexts["Sent! Now it's waiting for an admin to look at it."]
+        let approved = app.staticTexts["Everything's approved. Nice work!"]
 
-        // Nothing picked yet: the list on the left, today at a glance on the right.
-        XCTAssertTrue(app.staticTexts["Pick someone to see their card."].waitForExistence(timeout: wait))
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists)
+        // Nothing picked yet: the family on the left, the feed on the right. Only the right-hand
+        // pages are in the tab bar.
+        XCTAssertTrue(feedItem("riley", "approved", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(isOnScreen(playerTile("riley", in: app)))
+        XCTAssertFalse(app.buttons["page-family"].exists, "the family is always on screen, so it isn't in the tab bar")
+        XCTAssertTrue(app.buttons["page-feed"].isSelected)
         screenshot("ipad-01-nothing-picked", of: app)
 
-        // A player's day opens on the right; the list stays, with that player highlighted.
+        // A player's profile opens on the right; the family stays, with that player highlighted.
         open("sam", in: app)
-        XCTAssertTrue(app.staticTexts["Sent! Now it's waiting for an admin to look at it."].waitForExistence(timeout: wait))
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists, "the home list stays on screen")
-        XCTAssertFalse(app.staticTexts["Pick someone to see their card."].exists)
-        XCTAssertFalse(app.buttons["Back"].exists, "nothing to go back to beside the list")
-        let listRight = playerRow("sam", in: app).frame.maxX
-        let dayLeft = app.staticTexts["Sent! Now it's waiting for an admin to look at it."].frame.minX
-        XCTAssertLessThan(listRight, dayLeft, "the day sits to the right of the list, not over it")
+        XCTAssertTrue(sent.waitForExistence(timeout: wait))
+        XCTAssertTrue(isOnScreen(playerTile("riley", in: app)), "the family stays on screen")
+        XCTAssertTrue(playerTile("sam", in: app).isSelected)
+        XCTAssertLessThan(playerTile("sam", in: app).frame.maxX, sent.frame.minX, "the day sits to the right of the family, not over it")
         screenshot("ipad-02-day-beside-list", of: app)
 
         // Picking someone else swaps the right-hand side.
         open("riley", in: app)
-        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
-        XCTAssertFalse(playerRow("sam", in: app).isSelected)
+        XCTAssertTrue(approved.waitForExistence(timeout: wait))
+        XCTAssertTrue(playerTile("riley", in: app).isSelected)
+        XCTAssertFalse(playerTile("sam", in: app).isSelected)
 
-        // The bonus picker needs its own way back, since there's no screen behind it.
+        // The bonus picker has its own way back, to the day.
         app.buttons["Do a bonus round"].tap()
         XCTAssertTrue(app.buttons["Pick the chores you did"].waitForExistence(timeout: wait))
         goBack(in: app)
-        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
+        XCTAssertTrue(approved.waitForExistence(timeout: wait))
 
-        // The admin area opens on the right too, and closing it returns to the day.
-        app.buttons["Admin"].tap()
-        XCTAssertTrue(app.secureTextFields.firstMatch.waitForExistence(timeout: wait))
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists, "the home list stays on screen")
-        XCTAssertFalse(playerRow("riley", in: app).isSelected, "no player is highlighted while the admin area is open")
+        // Leaving the profile brings back the pages on the right; the family stays.
+        goBack(in: app)
+        XCTAssertTrue(until(wait) { self.isOnScreen(app.buttons["page-feed"]) }, "the right-hand pages come back")
+        XCTAssertTrue(isOnScreen(playerTile("riley", in: app)))
+        XCTAssertFalse(playerTile("riley", in: app).isSelected, "nobody's highlighted with no profile open")
+
+        // The admin area opens from settings, over everything, and closing it returns there.
+        openAdmin(in: app)
         screenshot("ipad-03-admin-area", of: app)
         goBack(in: app)
-        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
+        XCTAssertTrue(until(wait) { app.buttons["page-settings"].isSelected })
+        XCTAssertTrue(isOnScreen(playerTile("riley", in: app)))
 
         // Turned sideways it's still two panes on the same screen.
+        open("riley", in: app)
+        XCTAssertTrue(approved.waitForExistence(timeout: wait))
         XCUIDevice.shared.orientation = .landscapeLeft
-        XCTAssertTrue(app.staticTexts["Everything's approved. Nice work!"].waitForExistence(timeout: wait))
-        XCTAssertTrue(app.staticTexts["27/30 · 90%"].exists)
-        XCTAssertTrue(playerRow("riley", in: app).isSelected)
-        let wide = app.windows.firstMatch.frame
-        XCTAssertGreaterThan(wide.width, wide.height, "the app should have turned with the iPad")
-        XCTAssertLessThan(playerRow("riley", in: app).frame.maxX,
-                          app.staticTexts["Everything's approved. Nice work!"].frame.minX)
+        XCTAssertTrue(approved.waitForExistence(timeout: wait))
+        XCTAssertTrue(until(wait) { let f = app.windows.firstMatch.frame; return f.width > f.height }, "the app should have turned with the iPad")
+        XCTAssertTrue(playerTile("riley", in: app).isSelected)
+        XCTAssertLessThan(playerTile("riley", in: app).frame.maxX, approved.frame.minX)
         // The whole screen, not the app's own snapshot, which comes back cropped when sideways.
         let sideways = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         sideways.name = "ipad-04-landscape"
         sideways.lifetime = .keepAlways
         add(sideways)
         XCUIDevice.shared.orientation = .portrait
+    }
+
+    /// Dark, light or glass is picked in settings. Each one redraws the whole app; afterwards the
+    /// app still works, starting with the family's tiles. Put back to dark at the end, since the
+    /// choice is kept on the phone (and `-resetData` doesn't clear it).
+    func testSwitchingAppearanceKeepsTheAppWorking() {
+        let app = launch(["-resetData", "-demoFamily"])
+        func mode(_ name: String) -> XCUIElement { app.buttons["appearance-\(name)"] }
+        /// Taps a mode in settings' Look card and waits for the redrawn app to show it picked.
+        func pick(_ name: String) {
+            go(to: "settings", in: app)
+            reveal(mode(name), in: app)
+            mode(name).tap()
+            XCTAssertTrue(until(wait) { mode(name).exists && mode(name).isSelected }, "\(name) should be the one picked")
+            Thread.sleep(forTimeInterval: 1)   // the whole app redraws
+            XCTAssertTrue(until(wait) { app.buttons["page-settings"].exists && app.buttons["page-settings"].isSelected }, "still on settings after redrawing")
+        }
+        func familyStillWorks(_ name: String) {
+            go(to: "family", in: app)
+            XCTAssertTrue(until(wait) { self.isOnScreen(self.playerTile("riley", in: app)) }, "the family's tiles are there in \(name)")
+            XCTAssertTrue(isOnScreen(playerTile("sam", in: app)))
+            screenshot("50-appearance-\(name)", of: app)
+        }
+        defer {
+            // Leave the phone the way it was, even when a check above failed.
+            go(to: "settings", in: app)
+            if mode("dark").exists, !mode("dark").isSelected { reveal(mode("dark"), in: app); mode("dark").tap() }
+        }
+
+        go(to: "settings", in: app)
+        reveal(mode("dark"), in: app)
+        if !mode("dark").isSelected { mode("dark").tap() }
+        XCTAssertTrue(until(wait) { mode("dark").isSelected }, "dark to start with")
+
+        pick("light")
+        XCTAssertFalse(mode("dark").isSelected)
+        familyStillWorks("light")
+
+        pick("glass")
+        XCTAssertFalse(mode("light").isSelected)
+        familyStillWorks("glass")
+
+        // A profile still opens, and its day works.
+        open("riley", in: app)
+        XCTAssertTrue(mainButton(in: app).waitForExistence(timeout: wait))
+        XCTAssertEqual(mainButton(in: app).label, "Pick some chores, or let me suggest some")
     }
 
     // MARK: Phones
@@ -1069,10 +1326,14 @@ final class DOYOURWORKUITests: XCTestCase {
         phonesSection(in: app)
         app.buttons["Join with a code"].tap()
         app.buttons["Scan the code"].tap()
-        // The other phone's family (jules and kai) replaces the demo one (riley and sam).
-        XCTAssertTrue(playerRow("jules", in: app).waitForExistence(timeout: wait))
-        XCTAssertTrue(playerRow("kai", in: app).waitForExistence(timeout: wait))
-        XCTAssertFalse(playerRow("riley", in: app).exists)
+        // The other phone's family (jules and kai) replaces the demo one (riley and sam). The
+        // admin area closes on its own, back on settings.
+        // page-feed, as on a wide screen the family is a pane of its own with no page button.
+        XCTAssertTrue(until(wait) { self.isOnScreen(app.buttons["page-feed"]) }, "the admin area should close once the family has joined")
+        go(to: "family", in: app)
+        XCTAssertTrue(playerTile("jules", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(playerTile("kai", in: app).waitForExistence(timeout: wait))
+        XCTAssertFalse(playerTile("riley", in: app).exists)
         screenshot("41-joined-family", of: app)
         // Its admin code came with it, and both phones are listed.
         phonesSection(in: app)
@@ -1103,13 +1364,18 @@ final class DOYOURWORKUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Join with a code"].exists)
         screenshot("42-deleted-from-server", of: app)
         goBack(in: app)
-        XCTAssertTrue(playerRow("riley", in: app).waitForExistence(timeout: wait), "the family stays on this phone")
+        go(to: "family", in: app)
+        XCTAssertTrue(playerTile("riley", in: app).waitForExistence(timeout: wait), "the family stays on this phone")
 
-        // Still on its own after a restart: no sync status, nothing sent.
+        // Still on its own after a restart: no sync status on the settings page, nothing sent.
         app.terminate()
         let again = launch()
-        XCTAssertTrue(playerRow("riley", in: again).waitForExistence(timeout: wait))
-        XCTAssertTrue(again.staticTexts["Everything here stays on this device. No accounts, nothing sent anywhere."].waitForExistence(timeout: wait))
+        go(to: "family", in: again)
+        XCTAssertTrue(playerTile("riley", in: again).waitForExistence(timeout: wait))
+        go(to: "settings", in: again)
+        let onItsOwn = again.staticTexts["Everything here stays on this device. No accounts, nothing sent anywhere."]
+        reveal(onItsOwn, in: again)
+        XCTAssertFalse(again.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Sync:'")).firstMatch.exists)
     }
 
     /// A new phone joins from the very first screen, before anyone sets it up.
@@ -1118,8 +1384,8 @@ final class DOYOURWORKUITests: XCTestCase {
         let join = app.buttons["Join a family"]
         XCTAssertTrue(join.waitForExistence(timeout: wait))
         join.tap()
-        XCTAssertTrue(playerRow("jules", in: app).waitForExistence(timeout: wait))
-        XCTAssertTrue(playerRow("kai", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(playerTile("jules", in: app).waitForExistence(timeout: wait))
+        XCTAssertTrue(playerTile("kai", in: app).waitForExistence(timeout: wait))
         XCTAssertFalse(app.buttons["Set up this device"].exists, "the family it joined is already set up")
         unlockAdmin(in: app)
     }
@@ -1130,11 +1396,13 @@ final class DOYOURWORKUITests: XCTestCase {
         phonesSection(in: app)
         app.buttons["Join with a code"].tap()
         app.buttons["Scan the code"].tap()
-        XCTAssertTrue(playerRow("jules", in: app).waitForExistence(timeout: wait))
-        // Sync runs every 10 seconds.
+        // Sync runs every 10 seconds, so the message can come before there's time to look
+        // around: wait for it first.
         XCTAssertTrue(app.staticTexts["This phone is no longer in the family's sync. Everything on it stays here."].waitForExistence(timeout: 30))
         tapWhenReady(app.buttons["OK"], "the left-out message's OK")
-        XCTAssertTrue(playerRow("jules", in: app).exists, "what it had stays")
+        go(to: "family", in: app)
+        XCTAssertTrue(playerTile("jules", in: app).waitForExistence(timeout: wait), "what it had stays")
+        XCTAssertFalse(playerTile("riley", in: app).exists, "the family it joined replaced the demo one")
         phonesSection(in: app)
         XCTAssertTrue(label(startingWith: "The family is only on this phone.", in: app).waitForExistence(timeout: wait))
     }

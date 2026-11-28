@@ -23,7 +23,7 @@ struct OutlineButton: View {
     }
 }
 
-/// The app's buttons: edge-to-edge bands, no outlines or rounded corners.
+/// The app's buttons: rounded, full width with a margin, the main one in the screen's first colour.
 struct TermButtonStyle: ButtonStyle {
     let filled: Bool
 
@@ -46,8 +46,9 @@ struct TermButtonStyle: ButtonStyle {
                 .foregroundStyle(solid ? palette.ink : (isEnabled ? Color.appText : Color.done))
                 .padding(.horizontal, 20)
                 .frame(maxWidth: .infinity, minHeight: filled ? 54 : 46)
-                .background(solid ? palette.stops[0] : Color.surface)
-                .contentShape(Rectangle())
+                .background(solid ? palette.stops[0] : Color.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.horizontal, 16).padding(.vertical, 4)
                 .opacity(configuration.isPressed ? 0.7 : 1)
                 .scaleEffect(configuration.isPressed ? 0.98 : 1)
                 .animation(.spring(duration: 0.25), value: configuration.isPressed)
@@ -65,10 +66,10 @@ struct SectionLabel: View {
     }
 }
 
-/// One chore row, as a band of colour. Picking: rows light up when picked. On a card: a row
-/// ticked off drops to black and is struck through, as in Clear; after submit it shows the
-/// admin's verdict.
-struct ChoreRow: View {
+/// One chore, as a rounded tile in a grid two across. Picking: a tile lights up when picked. On a
+/// card: an unchecked tile is lit, and checking it off drops it to the surface colour, struck
+/// through; after it's sent, it shows the admin's verdict.
+struct ChoreTile: View {
     @Environment(\.palette) private var palette
     /// Not a parent's verdict: another player got this chore in first today.
     static let taken = "taken"
@@ -77,10 +78,10 @@ struct ChoreRow: View {
     var escalLevel = 0
     let checked: Bool
     var status: String? = nil
-    /// Where the row sits in its list, for its colour.
+    /// Where the tile sits in its list: kept for the callers, not used for colour any more.
     var index = 0
     var count = 1
-    /// The picker, where a picked row lights up (instead of a card, where a ticked row goes dark).
+    /// The picker, where a picked tile lights up (instead of a card, where a ticked tile goes dark).
     var picking = false
     var onToggle: (() -> Void)? = nil
 
@@ -89,21 +90,29 @@ struct ChoreRow: View {
         case Status.approved: ("approved", Theme.good)
         case Status.rejected: ("turned down", Theme.bad)
         case Status.pending: ("waiting", palette.ink.opacity(0.85))
-        case ChoreRow.taken: ("taken", Color.done)
+        case ChoreTile.taken: ("taken", Color.done)
         default: nil
         }
-        // Lit: on the gradient. Dark: done, taken, judged, or not picked yet.
         let lit = picking ? checked : (status == nil ? !checked : status == Status.pending)
-        let struck = !picking && (status == nil ? checked : status == Status.approved || status == ChoreRow.taken)
-        Band(index: index, count: count, done: !lit, minHeight: 50) {
-            HStack(spacing: 12) {
-                Text(name).strikethrough(struck).foregroundStyle(lit ? palette.ink : (picking || status == Status.rejected ? Color.appText : Color.done))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if escalLevel > 0 { Text(escalLevel == 1 ? "!" : "!!").fontWeight(.black).foregroundStyle(lit ? palette.ink : (escalLevel == 1 ? Theme.warn : Theme.bad)) }
-                if let verdict { Text(verdict.0).font(.app(.footnote)).fontWeight(.semibold).foregroundStyle(verdict.1) }
-                else { Text("\(minutes)m").font(.app(.callout)).foregroundStyle(lit ? palette.ink.opacity(0.85) : Color.done) }
+        let struck = !picking && (status == nil ? checked : status == Status.approved || status == ChoreTile.taken)
+        let ink = lit ? palette.ink : (picking || status == Status.rejected ? Color.appText : Color.done)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(name).font(.app(.callout)).fontWeight(.semibold).strikethrough(struck).foregroundStyle(ink)
+                .lineLimit(3).minimumScaleFactor(0.8).frame(maxWidth: .infinity, alignment: .leading)
+            Spacer(minLength: 0)
+            HStack(spacing: 6) {
+                if let verdict { Text(verdict.0).font(.app(.footnote)).fontWeight(.bold).foregroundStyle(lit ? palette.ink : verdict.1) }
+                else { Text("\(minutes) min").font(.app(.footnote)).fontWeight(.semibold).foregroundStyle(lit ? palette.ink.opacity(0.85) : Color.done) }
+                Spacer(minLength: 0)
+                if escalLevel > 0 { Text(escalLevel == 1 ? "!" : "!!").font(.app(.callout)).fontWeight(.black).foregroundStyle(lit ? palette.ink : (escalLevel == 1 ? Theme.warn : Theme.bad)) }
+                if !picking && status == nil { Image(systemName: checked ? "checkmark.circle.fill" : "circle").foregroundStyle(ink) }
+                if picking && checked { Image(systemName: "checkmark").fontWeight(.bold).foregroundStyle(ink) }
             }
         }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 70, alignment: .topLeading)
+        .background(lit ? palette.stops[0] : Color.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .onTapGesture { if status == nil { onToggle?() } }
         .animation(.easeOut(duration: 0.2), value: checked)
         .accessibilityElement(children: .ignore)
@@ -111,6 +120,9 @@ struct ChoreRow: View {
         .accessibilityAddTraits(status == nil && onToggle != nil ? .isButton : [])
         .accessibilityValue(status == nil ? (checked ? "checked" : "not checked") : "")
     }
+
+    /// The grid the tiles sit in.
+    static let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 }
 
 /// Version, XP bar and streak for one player.

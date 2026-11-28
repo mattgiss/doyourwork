@@ -126,7 +126,8 @@ object Backup {
     fun replace(b: BackupFile): Replaced {
         val ids = (b.members.map { it.id } + b.logs.map { it.playerId }).mapNotNull { it.toIntOrNull() }
         val family = Family(
-            members = b.members,
+            // A photo that isn't one the apps can show comes in as no photo.
+            members = b.members.map { it.copy(photo = ProfilePhoto.clean(it.photo)) },
             adminCodes = b.adminCodes.filter { c -> b.members.any { it.id == c.id && it.isAdmin } }
                 .associate { it.id to AdminCode(it.salt, it.hash) },
             chores = b.chores.ifEmpty { null },
@@ -170,7 +171,8 @@ object Backup {
             } else {
                 id = (next++).toString()
                 // Someone coming in without being an admin has to play, or they'd have no part in the game.
-                members += Player(id, m.name, m.displayName, isAdmin = bringAdmin, plays = m.plays || !bringAdmin, character = m.character)
+                members += Player(id, m.name, m.displayName, isAdmin = bringAdmin, plays = m.plays || !bringAdmin, character = m.character,
+                    photo = ProfilePhoto.clean(m.photo), border = m.border)
                 joined[id] = b.memberJoined[m.id] ?: now
                 if (m.plays || !bringAdmin) playersAdded++
             }

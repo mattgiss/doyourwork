@@ -19,7 +19,7 @@ from here, so treat field names and limits as a guide and trust the Console wher
 1. **The package name is permanent.** The play flavor is `com.doyourwork.app` (chosen 18 November
    2026). Once a bundle with that name is uploaded it can never be changed, and it shows in the
    app's Play Store address.
-2. **The version.** The Play build's version (1.3 now) matches the iPhone app's release with the same features (set in the play flavor in
+2. **The version.** The Play build's version (1.5 now) matches the iPhone app's release with the same features (set in the play flavor in
    `app/build.gradle.kts`; `release.sh` only changes the github build's version).
 3. **A closed test comes first.** New personal developer accounts have to run a closed test with
    at least 12 testers who stay opted in for 14 days before Google allows a production release.
@@ -191,6 +191,18 @@ Release notes for 1.3:
 
 ```
 A new game after you send your card: Eat the dots, a snake game you steer with swipes. On tablets and foldables, the screen opens up: today's progress for the whole family beside the list, and the two sides split at the fold.
+```
+
+Release notes for 1.5:
+
+```
+A new look. Your family is on the first page as photo tiles, each with their streak, and tapping someone opens their day. Swipe to the feed to see who did what, and to settings for your photo, a border earned with points (ears, hearts, a crown and more) and a choice of dark, light or glass.
+```
+
+Release notes for 1.4:
+
+```
+Eat the dots shows your best score on its button, and the time you have left gets its own line above the games. Game time is now 30 minutes a day, shared by both games.
 ```
 
 ## Launch

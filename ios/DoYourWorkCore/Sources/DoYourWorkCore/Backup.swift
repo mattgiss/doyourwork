@@ -16,6 +16,9 @@ public struct Backup: Codable, Equatable {
         public var id: String, name: String, displayName: String?, isAdmin: Bool, plays: Bool
         /// The character they picked, if they did. Absent from backups made before there were characters.
         public var character: String?
+        /// Their profile photo and border (see `Player`). Absent from backups made before there were any.
+        public var photo: String?
+        public var border: String?
     }
     public struct Code: Codable, Equatable { public var id: String, salt: String, hash: UInt32 }
     public struct Log: Codable, Equatable {
@@ -60,7 +63,8 @@ public struct Backup: Codable, Equatable {
                 now: Date = Date(), id: String = UUID().uuidString) {
         type = Self.typeName; version = Self.currentVersion; self.id = id
         exportedAt = Self.ms(now); self.source = source; self.appVersion = appVersion
-        self.members = members.map { Member(id: $0.id, name: $0.name, displayName: $0.displayName, isAdmin: $0.isAdmin, plays: $0.plays, character: $0.character) }
+        self.members = members.map { Member(id: $0.id, name: $0.name, displayName: $0.displayName, isAdmin: $0.isAdmin, plays: $0.plays, character: $0.character,
+                                                photo: $0.photo, border: $0.border) }
         adminCodes = codes.keys.sorted().map { Code(id: $0, salt: codes[$0]!.salt, hash: codes[$0]!.hash) }
         self.chores = chores
         self.choreAdded = choreAdded.mapValues(Self.ms)
@@ -117,7 +121,8 @@ public struct Backup: Codable, Equatable {
     // MARK: What's in it
 
     public var players: [Player] {
-        members.map { Player(id: $0.id, name: $0.name, displayName: $0.displayName.flatMap(DisplayName.clean), isAdmin: $0.isAdmin, plays: $0.plays, character: $0.character) }
+        members.map { Player(id: $0.id, name: $0.name, displayName: $0.displayName.flatMap(DisplayName.clean), isAdmin: $0.isAdmin, plays: $0.plays, character: $0.character,
+                             photo: ProfilePhoto.clean($0.photo), border: $0.border) }
     }
     public var codes: [String: AdminCode] {
         Dictionary(adminCodes.map { ($0.id, AdminCode(salt: $0.salt, hash: $0.hash)) }, uniquingKeysWith: { a, _ in a })
@@ -182,7 +187,8 @@ public struct Backup: Codable, Equatable {
                 let id = String(next); next += 1
                 idMap[m.id] = id
                 // Restored people come in as players or helpers, never admins: the family keeps its own.
-                newMembers.append(Player(id: id, name: m.name, displayName: m.displayName.flatMap(DisplayName.clean), isAdmin: false, plays: m.plays || m.isAdmin, character: m.character))
+                newMembers.append(Player(id: id, name: m.name, displayName: m.displayName.flatMap(DisplayName.clean), isAdmin: false, plays: m.plays || m.isAdmin, character: m.character,
+                                         photo: ProfilePhoto.clean(m.photo), border: m.border))
                 joined[id] = memberJoined[m.id].map(Self.date)
             } else if let earlier = newMembers.first(where: { $0.name.lowercased() == m.name.lowercased() }) {
                 idMap[m.id] = earlier.id

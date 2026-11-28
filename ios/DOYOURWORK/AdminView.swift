@@ -424,6 +424,6 @@ private struct Device: View {
 extension View {
     /// Sheets are their own window: hand them the app's objects and look.
     func appChrome(_ store: AppStore, _ fb: Feedback) -> some View {
-        environmentObject(store).environmentObject(fb).font(.app(.body)).tint(Theme.accent).preferredColorScheme(.dark)
+        environmentObject(store).environmentObject(fb).font(.app(.body)).tint(Theme.accent).preferredColorScheme(ThemeStore.shared.isLight ? .light : .dark)
     }
 }

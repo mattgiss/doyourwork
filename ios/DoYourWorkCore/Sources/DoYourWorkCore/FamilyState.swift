@@ -11,6 +11,8 @@ import Foundation
 /// | `removed_players` | ids taken off the list (their history stays on the server) |
 /// | `display\|<id>` | the display name, or nothing once cleared |
 /// | `character\|<id>` | the id of the character they picked, or nothing if they haven't. Older versions leave it alone. |
+/// | `photo\|<id>` | their profile photo, a small JPEG as base64 (`ProfilePhoto`), or nothing for none |
+/// | `border\|<id>` | the id of the border around their photo (`Borders`), or nothing for none |
 /// | `admins` | ids |
 /// | `admin_code\|<id>` | `"salt:hash"`, hash = decimal fnv1a(salt + trimmed code), as `AdminCode` |
 /// | `chores` | one chore per item, as JSON with the fields of `native/chores.json`; none = the starter list |
@@ -37,6 +39,8 @@ public enum FamilyState {
     public static func displayKey(_ id: String) -> String { "display|\(id)" }
     public static func adminCodeKey(_ id: String) -> String { "admin_code|\(id)" }
     public static func characterKey(_ id: String) -> String { "character|\(id)" }
+    public static func photoKey(_ id: String) -> String { "photo|\(id)" }
+    public static func borderKey(_ id: String) -> String { "border|\(id)" }
     public static func dareKey(from: String, day: String) -> String { "dare|\(from)|\(day)" }
 
     /// The family as the shared state describes it.
@@ -75,7 +79,9 @@ public enum FamilyState {
                 guard t.count == 2, !removedIds.contains(t[0]), seen.insert(t[0]).inserted else { return nil }
                 return Player(id: t[0], name: t[1], displayName: state[displayKey(t[0])]?.first.flatMap(DisplayName.clean),
                               isAdmin: adminIds.contains(t[0]), plays: plays,
-                              character: state[characterKey(t[0])]?.first.flatMap { $0.isEmpty ? nil : $0 })
+                              character: state[characterKey(t[0])]?.first.flatMap { $0.isEmpty ? nil : $0 },
+                              photo: ProfilePhoto.clean(state[photoKey(t[0])]?.first),
+                              border: state[borderKey(t[0])]?.first.flatMap { $0.isEmpty ? nil : $0 })
             }
         }
         let members = people(players, plays: true) + people(staff, plays: false)
@@ -108,9 +114,11 @@ public enum FamilyState {
             out[displayKey(m.id)] = m.displayName.flatMap(DisplayName.clean).map { [$0] } ?? []
             out[adminCodeKey(m.id)] = m.isAdmin ? family.codes[m.id].map { ["\($0.salt):\($0.hash)"] } ?? [] : []
             out[characterKey(m.id)] = m.character.map { [$0] } ?? []
+            out[photoKey(m.id)] = ProfilePhoto.clean(m.photo).map { [$0] } ?? []
+            out[borderKey(m.id)] = m.border.map { [$0] } ?? []
         }
         // Someone taken off the list loses their display name and code everywhere.
-        for id in family.removed { out[displayKey(id)] = []; out[adminCodeKey(id)] = []; out[characterKey(id)] = [] }
+        for id in family.removed { out[displayKey(id)] = []; out[adminCodeKey(id)] = []; out[characterKey(id)] = []; out[photoKey(id)] = []; out[borderKey(id)] = [] }
         return out
     }
 

@@ -54,6 +54,14 @@
         <activity android:name=".widget.WidgetPlayerActivity" android:exported="true" android:theme="@style/Theme.DOYOURWORK">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" /></intent-filter>
         </activity>
+        <!-- Hands the camera app a file in the cache to write a selfie to (ui/Photos.kt). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.photos"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/photo_paths" />
+        </provider>
         <!-- The scanner turns with the phone instead of forcing landscape. -->
         <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"

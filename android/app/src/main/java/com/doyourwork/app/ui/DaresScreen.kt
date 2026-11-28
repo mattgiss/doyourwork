@@ -50,19 +50,21 @@ fun DaresScreen(
     shared: Map<String, LocalEntry>,
     me: String,
     onBack: (() -> Unit)?,
+    /** Who's picked to start with: the person whose profile "Dare" was tapped on. */
+    initialTarget: String? = null,
 ) {
     val fb = LocalFeedback.current
     val today = vm.today().toString()
     val others = players.filter { it.id != me }
     val mine = vm.dares(shared).filter { it.from == me && it.day == today }
-    var targetId by rememberSaveable { mutableStateOf(others.firstOrNull()?.id) }
+    var targetId by rememberSaveable(initialTarget) { mutableStateOf(initialTarget?.takeIf { id -> others.any { it.id == id } } ?: others.firstOrNull()?.id) }
     val target = others.firstOrNull { it.id == targetId } ?: others.firstOrNull()
     var note by rememberSaveable { mutableStateOf<String?>(null) }
     val names = players.associate { it.id to it.shownName }
 
     // Dares are in Clear's plum theme: a secret, after-dark corner of the app.
     CompositionLocalProvider(LocalPalette provides Palette.PLUM) {
-    Column(Modifier.fillMaxSize().background(Bg)) {
+    Column(Modifier.fillMaxSize().appBackdrop()) {
         Row(Modifier.fillMaxWidth().background(Palette.PLUM.stops[0]).statusBarsPadding().padding(start = 8.dp + LocalColumnInset.current, end = 12.dp + LocalColumnInset.current, top = 4.dp, bottom = 14.dp),
             verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) TextButton(onClick = onBack) { Text("Back", color = Palette.PLUM.ink, fontWeight = FontWeight.Bold) }

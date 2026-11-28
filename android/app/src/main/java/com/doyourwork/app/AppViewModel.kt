@@ -586,6 +586,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         requestSync()
     }
 
+    /**
+     * A player's profile photo, or null to take it off. Their own call, like their character; it
+     * goes to the family's other phones as `photo|<id>`. Anything that isn't a photo the apps can
+     * show (see [com.doyourwork.app.engine.ProfilePhoto]) is ignored.
+     */
+    fun setPhoto(playerId: String, base64: String?) {
+        val photo = base64?.let { com.doyourwork.app.engine.ProfilePhoto.clean(it) ?: return }
+        val f = store.family.value
+        store.setFamily(f.copy(members = f.members.map { if (it.id == playerId) it.copy(photo = photo) else it }), now())
+        requestSync()
+    }
+
+    /** The border a player wears. Only a known border they've unlocked can be chosen; "none" takes it off. */
+    fun setBorder(playerId: String, borderId: String) {
+        val border = com.doyourwork.app.engine.Borders.named(borderId) ?: return
+        if (!com.doyourwork.app.engine.Borders.isUnlocked(border, totalXp(playerId, store.logs.value, store.state.value))) return
+        val f = store.family.value
+        store.setFamily(f.copy(members = f.members.map { if (it.id == playerId) it.copy(border = border.id.takeIf { it != "none" }) else it }), now())
+        requestSync()
+    }
+
     // ─── Admin: chores ──────────────────────────────────────────────────────
 
     /** Adds chores to the list, skipping any whose name is already on it. Returns how many went in. */
