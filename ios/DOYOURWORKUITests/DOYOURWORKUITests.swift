@@ -109,15 +109,28 @@ final class DOYOURWORKUITests: XCTestCase {
         _ = element.waitForExistence(timeout: 3)
         // Short drags, a fifth of the screen each, so nothing is skipped past or left under the
         // heading or the tab bar between looks.
+        // Drag in the element's own column: with two panes the middle of the screen is the gap
+        // (or the fold) between them, and nothing scrolls there.
+        // Until a grid makes the element, go by the tab bar, which sits under the pages' pane.
+        func column() -> CGFloat {
+            let width = app.frame.width
+            guard width > 0 else { return 0.5 }
+            for guide in [element, app.buttons["page-feed"]] where guide.exists && !guide.frame.isEmpty {
+                return min(max(guide.frame.midX / width, 0.05), 0.95)
+            }
+            return 0.5
+        }
         func drag(up: Bool) {
-            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.6 : 0.4))
-            let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.4 : 0.6))
+            let x = column()
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: x, dy: up ? 0.6 : 0.4))
+            let to = app.coordinate(withNormalizedOffset: CGVector(dx: x, dy: up ? 0.4 : 0.6))
             from.press(forDuration: 0.05, thenDragTo: to)
             Thread.sleep(forTimeInterval: 0.4)
         }
         for _ in 0..<15 where !isOnScreen(element) { drag(up: true) }
         for _ in 0..<15 where !isOnScreen(element) { drag(up: false) }
-        XCTAssertTrue(isOnScreen(element), "\(element) should scroll into view")
+        // A page that's still sliding in, or redrawing after a change of look, settles in a moment.
+        XCTAssertTrue(until(3) { self.isOnScreen(element) }, "\(element) should scroll into view")
     }
 
     /// Opens the admin area from the settings page, without unlocking it. On a slow simulator the
